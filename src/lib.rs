@@ -1,4 +1,6 @@
-use std::{io, path::Path};
+#![allow(clippy::tabs_in_doc_comments)]
+use std::io;
+use std::path::Path;
 
 /// Reads the entire contents of a file into a string.
 ///
@@ -21,15 +23,15 @@ use std::{io, path::Path};
 /// # Examples
 ///
 /// ```no_run
-/// use std::fs;
 /// use std::error::Error;
+/// use std::fs;
 ///
 /// fn main() -> Result<(), Box<dyn Error>> {
-///     let message: String = fs::read_to_string("message.txt")?;
-///     println!("{}", message);
-///     Ok(())
+/// 	let message: String = fs::read_to_string("message.txt")?;
+/// 	println!("{}", message);
+/// 	Ok(())
 /// }
 /// ```
 pub fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
-    std::fs::read_to_string(path)
+	std::fs::read_to_string(path)
 }
