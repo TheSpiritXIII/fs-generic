@@ -27,9 +27,11 @@ RUST_SRC_DIR=../rust RUST_LOG=info cargo run --package regen
 
 The regeneration script supports the following environment variables:
 
-Name | Default | Description
------|---------|------------
-`RUST_SRC_DIR` | `./rust/` | The directory to the Rust installation.
-`CARGO_BUILD_TARGET` | The first built-target found that matches the current OS and architecture. | The target that the Rust standard library was built with.
-`TARGET` | Alias for `CARGO_BUILD_TARGET`.
-`CARGO_RUSTC_CURRENT_DIR` | The globally installed `rustc` command directory. | The `rustc` directory to use when finding available targets.
+Name                      | Default   | Description
+--------------------------|-----------|------------
+`RUST_SRC_DIR`            | `./rust/` | The directory to the Rust installation.
+`CARGO_BUILD_TARGET`      |           | The first built-target found that matches the current OS and architecture. If unset, discovers the target that the Rust standard library was built with.
+`TARGET`                  |           | Alias for `CARGO_BUILD_TARGET`.
+`CARGO_RUSTC_CURRENT_DIR` |           | The `rustc` directory to use when discovering available targets. If unset, uses the globally installed `rustc` instance.
+`RUSTDOCFLAGS`            |           | Additional flags to build Rustdocs with.
+`REGEN_RUSTDOC_SKIP`      | `0`       | Set to `1` to disable skipping rebuilding the Rustdoc.
