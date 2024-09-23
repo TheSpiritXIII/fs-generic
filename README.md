@@ -4,23 +4,10 @@ This library generates an `fs` wrapper by running `rustdoc` on the standard libr
 
 A helper script is included to copy that file into this repository. It only needs to be run whenever there is an update in the standard library.
 
-First, clone this repository. Then, navigate to it.
-
-Next, install Rust and run the script. Run in your shell of choice:
+First, clone this repository. Then, navigate to it. Next, run the script. Run in your shell of choice:
 
 ```bash
-pushd ../
-git clone https://github.com/rust-lang/rust.git --depth 1
-pushd rust
-RUSTDOCFLAGS="--output-format json" ./x.py doc library/std
-popd # rust
-popd # ../
-```
-
-Finally, run the script:
-
-```bash
-RUST_SRC_DIR=../rust RUST_LOG=info cargo run --package regen
+RUST_LOG=info cargo run --package regen
 ```
 
 ### Environment Variables

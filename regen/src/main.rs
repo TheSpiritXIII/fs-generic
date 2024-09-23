@@ -19,7 +19,7 @@ fn main() -> anyhow::Result<()> {
 	env_logger::init();
 
 	let rust_src_dir = std::env::var("RUST_SRC_DIR").unwrap_or("./rust".to_owned());
-	let rust_src_path = path::absolute(&rust_src_dir)?.canonicalize()?;
+	let rust_src_path = path::absolute(&rust_src_dir)?;
 	if rust_src_path.exists() {
 		info!("Using rust source directory: {}", rust_src_path.display());
 
@@ -50,9 +50,12 @@ fn main() -> anyhow::Result<()> {
 		if let Some(rust_src_parent_dir) = rust_src_path.parent() {
 			info!("Creating rust source directory: {}", rust_src_parent_dir.display());
 			fs::create_dir_all(rust_src_parent_dir)?;
+
+			git_clone(rust_src_parent_dir, "https://github.com/rust-lang/rust.git")?;
+		} else {
+			error!("Cannot find parent directory: {}", rust_src_path.display());
+			std::process::exit(1);
 		}
-		error!("Please clone the Rust source code. See the README for detailed instructions")
-		// TODO: git clone https://github.com/rust-lang/rust.git --depth 1
 	}
 
 	let should_skip_rustdoc = match std::env::var("REGEN_RUSTDOC_SKIP") {
@@ -64,7 +67,7 @@ fn main() -> anyhow::Result<()> {
 				std::process::exit(1);
 			}
 		}
-		Err(_) => true,
+		Err(_) => false,
 	};
 	if !should_skip_rustdoc {
 		info!("Regenerating rustdoc...");
@@ -116,6 +119,7 @@ fn main() -> anyhow::Result<()> {
 		}
 	};
 
+	info!("Copying data to this project...");
 	fs::copy(target_path, "./data/std.json")?;
 	info!("Done!");
 	Ok(())
@@ -177,10 +181,6 @@ fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {
 			std::env::var("RUSTDOCFLAGS").unwrap_or_else(|_| String::new())
 		),
 	);
-	let output = command.output()?;
-	if !output.status.success() {
-		return Err(CommandError::ExitCode(output.status.code().unwrap_or(-1)));
-	}
 	command_redirect_output(command)
 }
 
@@ -252,6 +252,18 @@ fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> Result
 		"pull",
 		remote,
 		reference,
+	]);
+	command_redirect_output(command)
+}
+
+fn git_clone(repo_dir: impl AsRef<Path>, url: &str) -> Result<(), CommandError> {
+	let mut command = Command::new("git");
+	command.current_dir(repo_dir);
+	command.args([
+		"clone",
+		url,
+		"--depth",
+		"1",
 	]);
 	command_redirect_output(command)
 }
