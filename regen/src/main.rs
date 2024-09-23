@@ -22,9 +22,30 @@ fn main() -> anyhow::Result<()> {
 	let rust_src_path = path::absolute(&rust_src_dir)?.canonicalize()?;
 	if rust_src_path.exists() {
 		info!("Using rust source directory: {}", rust_src_path.display());
-	// TODO: git status
-	// TODO: git switch origin main
-	// TODO: git pull origin main
+
+		let skip_pull_env = std::env::var("REGEN_RUST_SRC_PULL_SKIP");
+		if !skip_pull_env.is_ok_and(|value| is_truthy(&value).unwrap_or(false)) {
+			let has_changes = git_has_changes(&rust_src_path)?;
+			if has_changes {
+				error!("Rust source directory has changes. Please commit or stash them.");
+				std::process::exit(1);
+			}
+
+			let rust_src_remote = std::env::var("RUST_SRC_REMOTE").unwrap_or("origin".to_owned());
+			let rust_src_ref = std::env::var("RUST_SRC_REF").unwrap_or("master".to_owned());
+			info!("Switching to {}/{}...", &rust_src_remote, &rust_src_ref);
+			git_switch(&rust_src_dir, &rust_src_ref)?;
+			info!("Pulling latest changes...");
+			git_pull(&rust_src_dir, &rust_src_remote, &rust_src_ref)?;
+
+			let has_changes = git_has_changes(&rust_src_path)?;
+			if has_changes {
+				error!("Rust source directory has changes. Please check for merge conflicts.");
+				std::process::exit(1);
+			}
+		} else {
+			info!("Skipping pulling latest Rust source.");
+		}
 	} else {
 		if let Some(rust_src_parent_dir) = rust_src_path.parent() {
 			info!("Creating rust source directory: {}", rust_src_parent_dir.display());
@@ -160,6 +181,10 @@ fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {
 	if !output.status.success() {
 		return Err(CommandError::ExitCode(output.status.code().unwrap_or(-1)));
 	}
+	command_redirect_output(command)
+}
+
+fn command_redirect_output(mut command: Command) -> Result<(), CommandError> {
 	command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
 	let mut child = command.spawn()?;
@@ -195,4 +220,38 @@ fn is_truthy(value: &str) -> Option<bool> {
 		return Some(false);
 	}
 	None
+}
+
+fn git_has_changes(repo_dir: impl AsRef<Path>) -> io::Result<bool> {
+	let mut command = Command::new("git");
+	command.current_dir(repo_dir);
+	command.args([
+		"diff",
+		"--quiet",
+		"--exit-code",
+		"--cached",
+	]);
+	let output = command.output()?;
+	Ok(!output.status.success())
+}
+
+fn git_switch(repo_dir: impl AsRef<Path>, reference: &str) -> Result<(), CommandError> {
+	let mut command = Command::new("git");
+	command.current_dir(repo_dir);
+	command.args([
+		"switch",
+		reference,
+	]);
+	command_redirect_output(command)
+}
+
+fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> Result<(), CommandError> {
+	let mut command = Command::new("git");
+	command.current_dir(repo_dir);
+	command.args([
+		"pull",
+		remote,
+		reference,
+	]);
+	command_redirect_output(command)
 }
