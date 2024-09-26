@@ -1,3 +1,4 @@
+#![warn(clippy::pedantic)]
 use std::env;
 use std::fs;
 use std::io::BufRead;
@@ -20,44 +21,6 @@ fn main() -> anyhow::Result<()> {
 
 	let rust_src_dir = std::env::var("RUST_SRC_DIR").unwrap_or("./rust".to_owned());
 	let rust_src_path = path::absolute(&rust_src_dir)?;
-	if rust_src_path.exists() {
-		info!("Using rust source directory: {}", rust_src_path.display());
-
-		let skip_pull_env = std::env::var("REGEN_RUST_SRC_PULL_SKIP");
-		if !skip_pull_env.is_ok_and(|value| is_truthy(&value).unwrap_or(false)) {
-			let has_changes = git_has_changes(&rust_src_path)?;
-			if has_changes {
-				error!("Rust source directory has changes. Please commit or stash them.");
-				std::process::exit(1);
-			}
-
-			let rust_src_remote = std::env::var("RUST_SRC_REMOTE").unwrap_or("origin".to_owned());
-			let rust_src_ref = std::env::var("RUST_SRC_REF").unwrap_or("master".to_owned());
-			info!("Switching to {}/{}...", &rust_src_remote, &rust_src_ref);
-			git_switch(&rust_src_dir, &rust_src_ref)?;
-			info!("Pulling latest changes...");
-			git_pull(&rust_src_dir, &rust_src_remote, &rust_src_ref)?;
-
-			let has_changes = git_has_changes(&rust_src_path)?;
-			if has_changes {
-				error!("Rust source directory has changes. Please check for merge conflicts.");
-				std::process::exit(1);
-			}
-		} else {
-			info!("Skipping pulling latest Rust source.");
-		}
-	} else {
-		if let Some(rust_src_parent_dir) = rust_src_path.parent() {
-			info!("Creating rust source directory: {}", rust_src_parent_dir.display());
-			fs::create_dir_all(rust_src_parent_dir)?;
-
-			git_clone(rust_src_parent_dir, "https://github.com/rust-lang/rust.git")?;
-		} else {
-			error!("Cannot find parent directory: {}", rust_src_path.display());
-			std::process::exit(1);
-		}
-	}
-
 	let should_skip_rustdoc = match std::env::var("REGEN_RUSTDOC_SKIP") {
 		Ok(should_skip_env) => {
 			if let Some(is_truthy) = is_truthy(&should_skip_env) {
@@ -69,11 +32,49 @@ fn main() -> anyhow::Result<()> {
 		}
 		Err(_) => false,
 	};
-	if !should_skip_rustdoc {
-		info!("Regenerating rustdoc...");
-		regen_rustdoc(&rust_src_path)?;
-	} else {
+	if should_skip_rustdoc {
 		info!("Skipping regenerating rustdoc.");
+	} else {
+		info!("Regenerating rustdoc...");
+
+		if rust_src_path.exists() {
+			info!("Using rust source directory: {}", rust_src_path.display());
+
+			let skip_pull_env = std::env::var("REGEN_RUST_SRC_PULL_SKIP");
+			if skip_pull_env.is_ok_and(|value| is_truthy(&value).unwrap_or(false)) {
+				info!("Skipping pulling latest Rust source.");
+			} else {
+				let has_changes = git_has_changes(&rust_src_path)?;
+				if has_changes {
+					error!("Rust source directory has changes. Please commit or stash them.");
+					std::process::exit(1);
+				}
+
+				let rust_src_remote =
+					std::env::var("RUST_SRC_REMOTE").unwrap_or("origin".to_owned());
+				let rust_src_ref = std::env::var("RUST_SRC_REF").unwrap_or("master".to_owned());
+				info!("Switching to {}/{}...", &rust_src_remote, &rust_src_ref);
+				git_switch(&rust_src_dir, &rust_src_ref)?;
+				info!("Pulling latest changes...");
+				git_pull(&rust_src_dir, &rust_src_remote, &rust_src_ref)?;
+
+				let has_changes = git_has_changes(&rust_src_path)?;
+				if has_changes {
+					error!("Rust source directory has changes. Please check for merge conflicts.");
+					std::process::exit(1);
+				}
+			}
+		} else if let Some(rust_src_parent_dir) = rust_src_path.parent() {
+			info!("Creating rust source directory: {}", rust_src_parent_dir.display());
+			fs::create_dir_all(rust_src_parent_dir)?;
+
+			git_clone(rust_src_parent_dir, "https://github.com/rust-lang/rust.git")?;
+		} else {
+			error!("Cannot find parent directory: {}", rust_src_path.display());
+			std::process::exit(1);
+		}
+
+		regen_rustdoc(&rust_src_path)?;
 	}
 
 	let target_env = std::env::var("CARGO_BUILD_TARGET").or_else(|_| std::env::var("TARGET"));
@@ -111,12 +112,9 @@ fn main() -> anyhow::Result<()> {
 				})
 		});
 
-	let target_path = match target_path_option {
-		Some(path) => path,
-		None => {
-			error!("Unable to find a build target. Was rustdoc built?");
-			std::process::exit(1)
-		}
+	let Some(target_path) = target_path_option else {
+		error!("Unable to find a build target. Was rustdoc built?");
+		std::process::exit(1)
 	};
 
 	info!("Copying data to this project...");
@@ -163,7 +161,7 @@ fn is_native_target(target: &str) -> bool {
 }
 
 fn rustdoc_build_path(target: &str) -> String {
-	format!("build/{}/doc/std.json", target)
+	format!("build/{target}/doc/std.json")
 }
 
 fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {

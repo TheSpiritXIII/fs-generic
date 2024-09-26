@@ -16,12 +16,12 @@ The regeneration script supports the following environment variables:
 
 Name                       | Default   | Description
 ---------------------------|-----------|------------
-`RUST_SRC_DIR`             | `./rust/` | The directory to the Rust installation.
-`CARGO_BUILD_TARGET`       |           | The first built-target found that matches the current OS and architecture. If unset, discovers the target that the Rust standard library was built with.
-`TARGET`                   |           | Alias for `CARGO_BUILD_TARGET`.
+`CARGO_BUILD_TARGET`       |           | The build target to use. If unset, attempts to discover the target that the Rust standard library was built with.
 `CARGO_RUSTC_CURRENT_DIR`  |           | The `rustc` directory to use when discovering available targets. If unset, uses the globally installed `rustc` instance.
-`RUSTDOCFLAGS`             |           | Additional flags to build Rustdocs with.
 `REGEN_RUSTDOC_SKIP`       | `0`       | Set to `1` to disable skipping rebuilding the Rustdoc.
-`REGEN_RUST_SRC_PULL_SKIP` | `0`       | Set to disable skipping updating the Rust source.
-`RUST_SRC_REMOTE`          | `origin`  | The remote to pull from upstream when `REGEN_SKIP_UPDATE` is unset.
+`REGEN_RUST_SRC_PULL_SKIP` | `0`       | Set to `1` to disable skipping updating the Rust source.
+`RUSTDOCFLAGS`             |           | Additional flags to build Rustdocs with.
+`RUST_SRC_DIR`             | `./rust/` | The directory to the Rust installation.
 `RUST_SRC_REF`             | `master`  | The ref to build the Rust source from.
+`RUST_SRC_REMOTE`          | `origin`  | The remote to pull Resource source upstream from.
+`TARGET`                   |           | Alias for `CARGO_BUILD_TARGET`.
