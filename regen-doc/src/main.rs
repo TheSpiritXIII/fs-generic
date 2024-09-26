@@ -16,7 +16,7 @@ use log::info;
 use log::warn;
 use thiserror::Error;
 
-static CONFIG_FILE: &'static str = include_str!("../data/config.toml");
+const CONFIG_FILE: &str = include_str!("../data/config.toml");
 
 fn main() -> anyhow::Result<()> {
 	env_logger::init();

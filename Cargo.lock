@@ -142,7 +142,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "regen"
+name = "regen-doc"
 version = "0.1.0"
 dependencies = [
  "anyhow",

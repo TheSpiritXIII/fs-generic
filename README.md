@@ -7,7 +7,7 @@ A helper script is included to copy that file into this repository. It only need
 First, clone this repository. Then, navigate to it. Next, run the script. Run in your shell of choice:
 
 ```bash
-RUST_LOG=info cargo run --package regen
+RUST_LOG=info cargo run --package regen-doc
 ```
 
 ### Environment Variables
