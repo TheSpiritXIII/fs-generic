@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["regen-doc"]
+members = ["regen-doc", "regen-src"]
 exclude = ["rust"]
+
+[workspace.dependencies]
+anyhow = "1.0.89"
+env_logger = "0.11.5"
+log = "0.4.22"

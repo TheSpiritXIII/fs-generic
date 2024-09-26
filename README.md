@@ -2,7 +2,11 @@
 
 This library generates an `fs` wrapper by running `rustdoc` on the standard library itself, using the `--output-format json` option.
 
-A helper script is included to copy that file into this repository. It only needs to be run whenever there is an update in the standard library.
+There are two helper scripts:
+1. `regen-doc`: Builds and copies the rust-lang `rustdoc` output into `data/std.json`. It only needs to be run whenever there is an update in the standard library.
+2. `regen-src`: Processes `data/std.json` and output valid Rust source code into `src/generated.rs`.
+
+### regen-doc
 
 First, clone this repository. Then, navigate to it. Next, run the script. Run in your shell of choice:
 
@@ -10,7 +14,7 @@ First, clone this repository. Then, navigate to it. Next, run the script. Run in
 RUST_LOG=info cargo run --package regen-doc
 ```
 
-### Environment Variables
+#### Environment Variables
 
 The regeneration script supports the following environment variables:
 
@@ -25,3 +29,11 @@ Name                       | Default   | Description
 `RUST_SRC_REF`             | `master`  | The ref to build the Rust source from.
 `RUST_SRC_REMOTE`          | `origin`  | The remote to pull Resource source upstream from.
 `TARGET`                   |           | Alias for `CARGO_BUILD_TARGET`.
+
+### regen-src
+
+Run:
+
+```bash
+RUST_LOG=info cargo run --package regen-src
+```
