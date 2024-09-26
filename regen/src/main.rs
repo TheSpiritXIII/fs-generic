@@ -16,6 +16,8 @@ use log::info;
 use log::warn;
 use thiserror::Error;
 
+static CONFIG_FILE: &'static str = include_str!("../data/config.toml");
+
 fn main() -> anyhow::Result<()> {
 	env_logger::init();
 
@@ -69,6 +71,9 @@ fn main() -> anyhow::Result<()> {
 			fs::create_dir_all(rust_src_parent_dir)?;
 
 			git_clone(rust_src_parent_dir, "https://github.com/rust-lang/rust.git")?;
+
+			info!("Creating default config.toml file...");
+			fs::write(rust_src_path.join("config.toml"), CONFIG_FILE)?;
 		} else {
 			error!("Cannot find parent directory: {}", rust_src_path.display());
 			std::process::exit(1);
@@ -171,7 +176,12 @@ fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {
 		"x.py",
 		"doc",
 		"library/std",
+		// Specify stage explicitly otherwise this fails on GitHub Actions.
+		"--stage",
+		"0",
 	]);
+	// Rust-lang refuses to download LLVM in GitHub Actions, so trick it.
+	command.env_remove("GITHUB_ACTIONS");
 	command.env(
 		"RUSTDOCFLAGS",
 		format!(

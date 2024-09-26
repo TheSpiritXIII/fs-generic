@@ -1,0 +1,5 @@
+# Minimal CI-friendly rust-lang config for building JSON docs.
+change-id = 130529
+
+[llvm]
+download-ci-llvm = true
