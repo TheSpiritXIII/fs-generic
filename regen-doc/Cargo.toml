@@ -7,4 +7,4 @@ edition = "2021"
 anyhow = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
-thiserror = "1.0.63"
+thiserror = { workspace = true }
