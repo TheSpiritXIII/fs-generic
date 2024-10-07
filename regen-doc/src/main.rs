@@ -5,6 +5,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::{self};
 use std::path::Path;
+use std::path::PathBuf;
 use std::path::{self};
 use std::process::Command;
 use std::process::Stdio;
@@ -65,6 +66,14 @@ fn main() -> anyhow::Result<()> {
 					error!("Rust source directory has changes. Please check for merge conflicts.");
 					std::process::exit(1);
 				}
+
+				let skip_pull_env = std::env::var("REGEN_RUST_SRC_CONF_SKIP");
+				if skip_pull_env.is_ok_and(|value| is_truthy(&value).unwrap_or(false)) {
+					info!("Skipping updating config.toml.");
+				} else {
+					info!("Updating config.toml file...");
+					fs::write(rust_src_path.join("config.toml"), CONFIG_FILE)?;
+				}
 			}
 		} else if let Some(rust_src_parent_dir) = rust_src_path.parent() {
 			info!("Creating rust source directory: {}", rust_src_parent_dir.display());
@@ -82,11 +91,24 @@ fn main() -> anyhow::Result<()> {
 		regen_rustdoc(&rust_src_path)?;
 	}
 
+	let target_path_option = discover_target(rust_src_path);
+	let Some(target_path) = target_path_option else {
+		error!("Unable to find a build target. Was rustdoc built?");
+		std::process::exit(1)
+	};
+
+	info!("Copying data to this project...");
+	fs::copy(target_path, "./data/std.json")?;
+	info!("Done!");
+	Ok(())
+}
+
+fn discover_target(rust_src_path: impl AsRef<Path>) -> Option<PathBuf> {
 	let target_env = std::env::var("CARGO_BUILD_TARGET").or_else(|_| std::env::var("TARGET"));
-	let target_path_option = target_env
+	target_env
 		.ok()
 		.and_then(|target| {
-			let std_rustdoc_path = rust_src_path.join(rustdoc_build_path(&target));
+			let std_rustdoc_path = rust_src_path.as_ref().join(rustdoc_build_path(&target));
 			if std_rustdoc_path.exists() {
 				info!("Using target: {}", target);
 				Some(std_rustdoc_path)
@@ -109,23 +131,13 @@ fn main() -> anyhow::Result<()> {
 			targets
 				.iter()
 				.filter(|target| is_native_target(target))
-				.map(|target| (target, rust_src_path.join(rustdoc_build_path(target))))
+				.map(|target| (target, rust_src_path.as_ref().join(rustdoc_build_path(target))))
 				.find(|(_, std_rustdoc_path)| std_rustdoc_path.exists())
 				.map(|(target, std_rustdoc_path)| {
 					info!("Detected existing target: {}", target);
 					std_rustdoc_path
 				})
-		});
-
-	let Some(target_path) = target_path_option else {
-		error!("Unable to find a build target. Was rustdoc built?");
-		std::process::exit(1)
-	};
-
-	info!("Copying data to this project...");
-	fs::copy(target_path, "./data/std.json")?;
-	info!("Done!");
-	Ok(())
+		})
 }
 
 // Returns the list of targets that can be built for this OS and architecture.
@@ -260,6 +272,7 @@ fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> Result
 		"pull",
 		remote,
 		reference,
+		"--progress",
 	]);
 	command_redirect_output(command)
 }

@@ -14,6 +14,12 @@ First, clone this repository. Then, navigate to it. Next, run the script. Run in
 RUST_LOG=info cargo run --package regen-doc
 ```
 
+If you already have the Rust source installed on your system and would rather use that, run:
+
+```bash
+RUST_LOG=info RUST_SRC_DIR=path/to/rust REGEN_RUST_SRC_CONF_SKIP=1 cargo run --package regen-doc
+```
+
 #### Environment Variables
 
 The regeneration script supports the following environment variables:
@@ -24,6 +30,7 @@ Name                       | Default   | Description
 `CARGO_RUSTC_CURRENT_DIR`  |           | The `rustc` directory to use when discovering available targets. If unset, uses the globally installed `rustc` instance.
 `REGEN_RUSTDOC_SKIP`       | `0`       | Set to `1` to disable skipping rebuilding the Rustdoc.
 `REGEN_RUST_SRC_PULL_SKIP` | `0`       | Set to `1` to disable skipping updating the Rust source.
+`REGEN_RUST_SRC_CONF_SKIP` | `0`       | Set to `1` to disable skipping overriding the default Rust source configuration file.
 `RUSTDOCFLAGS`             |           | Additional flags to build Rustdocs with.
 `RUST_SRC_DIR`             | `./rust/` | The directory to the Rust installation.
 `RUST_SRC_REF`             | `master`  | The ref to build the Rust source from.
