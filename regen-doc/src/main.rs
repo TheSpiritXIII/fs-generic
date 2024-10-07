@@ -248,8 +248,6 @@ fn git_has_changes(repo_dir: impl AsRef<Path>) -> io::Result<bool> {
 	command.args([
 		"diff",
 		"--quiet",
-		"--exit-code",
-		"--cached",
 	]);
 	let output = command.output()?;
 	Ok(!output.status.success())
