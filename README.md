@@ -1,3 +1,6 @@
+> [!NOTE]  
+> This library is a WIP and not functional yet!
+
 ## Regenerating
 
 This library generates an `fs` wrapper by running `rustdoc` on the standard library itself, using the `--output-format json` option.
