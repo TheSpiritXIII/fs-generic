@@ -12,3 +12,6 @@ anyhow = "1.0.89"
 env_logger = "0.11.5"
 log = "0.4.22"
 thiserror = "1.0.63"
+
+[patch.crates-io]
+rustdoc-types = { git = "https://github.com/TheSpiritXIII/rustdoc-types.git", rev = "6cf3966ac35c4dba8f99bd0988f33d94df66ec7a" }

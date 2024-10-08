@@ -9,6 +9,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
     - run: RUST_LOG=info cargo run --package regen-doc
+    - run: RUST_LOG=info cargo run --package regen-src
 
   clippy:
     name: Clippy
