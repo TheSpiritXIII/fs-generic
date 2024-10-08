@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+use std::cmp::Ordering;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io;
@@ -22,7 +23,7 @@ fn main() -> anyhow::Result<()> {
 	info!("Regenerating source into {}...", output_path.display());
 	let mut out_file =
 		OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
-	writeln!(out_file, "{HEADER}")?;
+	write!(out_file, "{HEADER}")?;
 	json_to_rs(&doc_crate, &mut out_file)?;
 	info!("Done!");
 	Ok(())
@@ -37,7 +38,9 @@ pub enum SourceError {
 }
 
 fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result<(), SourceError> {
-	let root_module = doc_crate.index.get(&doc_crate.root).unwrap();
+	let Some(root_module) = doc_crate.index.get(&doc_crate.root) else {
+		return Err(SourceError::ParseError("could not find root item in index"));
+	};
 	let rustdoc_types::ItemEnum::Module(doc_module) = &root_module.inner else {
 		return Err(SourceError::ParseError("expected root to be a module"));
 	};
@@ -45,11 +48,28 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 		if let Some(item) = doc_crate.index.get(id) {
 			if let rustdoc_types::ItemEnum::Module(item_module) = &item.inner {
 				if item.name.as_ref().is_some_and(|name| name == "fs") {
+					let mut function_list = Vec::new();
 					for id in &item_module.items {
-						let item = doc_crate.index.get(id).unwrap();
+						let Some(item) = doc_crate.index.get(id) else {
+							continue;
+						};
 						if let rustdoc_types::ItemEnum::Function(function) = &item.inner {
-							print_function(out, doc_crate, item, function)?;
+							if let Some(name) = &item.name {
+								function_list.push((name, item, function));
+							}
 						}
+					}
+					function_list.sort_by(|lhs, rhs| -> Ordering {
+						let name_ordering = lhs.0.cmp(rhs.0);
+						if name_ordering != Ordering::Equal {
+							name_ordering
+						} else {
+							lhs.1.id.0.cmp(&rhs.1.id.0)
+						}
+					});
+					for (_, item, function) in function_list {
+						writeln!(out)?;
+						print_function_wrapper(out, doc_crate, item, function, "std::fs::")?;
 					}
 				}
 			}
@@ -58,7 +78,7 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 	Ok(())
 }
 
-fn print_function<W: Write>(
+fn print_function_definition<W: Write>(
 	out: &mut W,
 	doc_crate: &rustdoc_types::Crate,
 	item: &rustdoc_types::Item,
@@ -112,6 +132,7 @@ fn print_function<W: Write>(
 		}
 		write!(out, ">")?;
 	}
+
 	write!(out, "(")?;
 	for (input_name, input_type) in &function.decl.inputs {
 		write!(out, "{input_name}: ")?;
@@ -119,12 +140,25 @@ fn print_function<W: Write>(
 		write!(out, ", ")?;
 	}
 	write!(out, ")")?;
+
 	if let Some(output_type) = &function.decl.output {
 		write!(out, " -> ")?;
 		print_type(out, doc_crate, output_type)?;
 	}
+	Ok(())
+}
+
+fn print_function_wrapper<W: Write>(
+	out: &mut W,
+	doc_crate: &rustdoc_types::Crate,
+	item: &rustdoc_types::Item,
+	function: &rustdoc_types::Function,
+	prefix: &str,
+) -> io::Result<()> {
+	print_function_definition(out, doc_crate, item, function)?;
+
 	writeln!(out, " {{")?;
-	write!(out, "	std::fs::{}(", item.name.as_ref().unwrap())?;
+	write!(out, "	{prefix}{}(", item.name.as_ref().unwrap())?;
 	for (input_name, _) in &function.decl.inputs {
 		write!(out, "{input_name}, ")?;
 	}
