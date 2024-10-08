@@ -70,12 +70,37 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 							name_ordering
 						}
 					});
-					for (_, item, function) in function_list {
+
+					writeln!(out)?;
+					writeln!(out, "pub trait Fs {{")?;
+					for (_, item, function) in &function_list {
+						writeln!(out)?;
+						print_doc(out, item)?;
+						print_function_definition(out, doc_crate, item, function)?;
+						writeln!(out, ";")?;
+					}
+					writeln!(out, "}}")?;
+
+					writeln!(out)?;
+					writeln!(out, "pub struct Native {{}}")?;
+					writeln!(out)?;
+					writeln!(out, "impl Fs for Native {{")?;
+					for (_, item, function) in &function_list {
 						writeln!(out)?;
 						print_function_wrapper(out, doc_crate, item, function, "std::fs::")?;
 					}
+					writeln!(out, "}}")?;
 				}
 			}
+		}
+	}
+	Ok(())
+}
+
+fn print_doc<W: Write>(out: &mut W, item: &rustdoc_types::Item) -> io::Result<()> {
+	if let Some(docs) = &item.docs {
+		for line in docs.lines() {
+			writeln!(out, "/// {line}")?;
 		}
 	}
 	Ok(())
@@ -87,12 +112,7 @@ fn print_function_definition<W: Write>(
 	item: &rustdoc_types::Item,
 	function: &rustdoc_types::Function,
 ) -> io::Result<()> {
-	if let Some(docs) = &item.docs {
-		for line in docs.lines() {
-			writeln!(out, "/// {line}")?;
-		}
-	}
-	write!(out, "pub fn {}", item.name.as_ref().unwrap())?;
+	write!(out, "fn {}", item.name.as_ref().unwrap())?;
 	if !function.generics.params.is_empty() {
 		write!(out, "<")?;
 		for generic_param in &function.generics.params {
