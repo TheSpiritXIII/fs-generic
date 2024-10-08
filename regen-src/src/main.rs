@@ -21,10 +21,13 @@ fn main() -> anyhow::Result<()> {
 
 	let output_path = path::absolute("src/generated.rs")?;
 	info!("Regenerating source into {}...", output_path.display());
+	let mut buf = Vec::new();
+	write!(buf, "{HEADER}")?;
+	json_to_rs(&doc_crate, &mut buf)?;
+
 	let mut out_file =
 		OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
-	write!(out_file, "{HEADER}")?;
-	json_to_rs(&doc_crate, &mut out_file)?;
+	out_file.write_all(&buf)?;
 	info!("Done!");
 	Ok(())
 }
@@ -61,10 +64,10 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 					}
 					function_list.sort_by(|lhs, rhs| -> Ordering {
 						let name_ordering = lhs.0.cmp(rhs.0);
-						if name_ordering != Ordering::Equal {
-							name_ordering
-						} else {
+						if name_ordering == Ordering::Equal {
 							lhs.1.id.0.cmp(&rhs.1.id.0)
+						} else {
+							name_ordering
 						}
 					});
 					for (_, item, function) in function_list {
