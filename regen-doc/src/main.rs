@@ -181,7 +181,7 @@ fn rustdoc_build_path(target: &str) -> String {
 	format!("build/{target}/doc/std.json")
 }
 
-fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {
+fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> io::Result<()> {
 	let mut command = Command::new("python3");
 	command.current_dir(rust_src_dir);
 	command.args([
@@ -204,11 +204,11 @@ fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> Result<(), CommandError> {
 	command_redirect_output(command)
 }
 
-fn command_redirect_output(mut command: Command) -> Result<(), CommandError> {
+fn command_redirect_output(mut command: Command) -> io::Result<()> {
 	command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
 	let mut child = command.spawn()?;
-	thread::scope::<_, Result<(), CommandError>>(|scope| {
+	thread::scope::<_, io::Result<()>>(|scope| {
 		let handle = scope.spawn::<_, io::Result<()>>(|| {
 			if let Some(stdout) = &mut child.stderr {
 				let lines = BufReader::new(stdout).lines();
@@ -253,7 +253,7 @@ fn git_has_changes(repo_dir: impl AsRef<Path>) -> io::Result<bool> {
 	Ok(!output.status.success())
 }
 
-fn git_switch(repo_dir: impl AsRef<Path>, reference: &str) -> Result<(), CommandError> {
+fn git_switch(repo_dir: impl AsRef<Path>, reference: &str) -> io::Result<()> {
 	let mut command = Command::new("git");
 	command.current_dir(repo_dir);
 	command.args([
@@ -263,7 +263,7 @@ fn git_switch(repo_dir: impl AsRef<Path>, reference: &str) -> Result<(), Command
 	command_redirect_output(command)
 }
 
-fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> Result<(), CommandError> {
+fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> io::Result<()> {
 	let mut command = Command::new("git");
 	command.current_dir(repo_dir);
 	command.args([
@@ -275,7 +275,7 @@ fn git_pull(repo_dir: impl AsRef<Path>, remote: &str, reference: &str) -> Result
 	command_redirect_output(command)
 }
 
-fn git_clone(repo_dir: impl AsRef<Path>, url: &str) -> Result<(), CommandError> {
+fn git_clone(repo_dir: impl AsRef<Path>, url: &str) -> io::Result<()> {
 	let mut command = Command::new("git");
 	command.current_dir(repo_dir);
 	command.args([

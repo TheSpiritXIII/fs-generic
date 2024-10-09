@@ -2,9 +2,15 @@
 use std::cmp::Ordering;
 use std::fs;
 use std::fs::OpenOptions;
-use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
 use std::io::Write;
-use std::path;
+use std::io::{self};
+use std::path::Path;
+use std::path::{self};
+use std::process::Command;
+use std::process::Stdio;
+use std::thread;
 
 use log::info;
 use thiserror::Error;
@@ -16,7 +22,7 @@ fn main() -> anyhow::Result<()> {
 
 	let input_path = path::absolute("data/std.json")?;
 	info!("Parsing doc from {}...", input_path.display());
-	let input_data = fs::read_to_string(input_path).unwrap();
+	let input_data = fs::read_to_string(input_path)?;
 	let doc_crate = serde_json::from_str(&input_data)?;
 
 	let output_path = path::absolute("src/generated.rs")?;
@@ -26,9 +32,53 @@ fn main() -> anyhow::Result<()> {
 	json_to_rs(&doc_crate, &mut buf)?;
 
 	let mut out_file =
-		OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
+		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
 	out_file.write_all(&buf)?;
+
+	info!("Formatting generated files...");
+	rustfmt(&output_path)?;
+
 	info!("Done!");
+	Ok(())
+}
+
+fn rustfmt(file: impl AsRef<Path>) -> io::Result<()> {
+	let cargo_path = env!("CARGO");
+	let manifest_path = env!("CARGO_MANIFEST_DIR");
+	let mut command = Command::new(cargo_path);
+	command.current_dir(manifest_path);
+	command.args([
+		"fmt",
+		"--",
+		file.as_ref().as_os_str().to_str().unwrap(),
+	]);
+	command_redirect_output(command)
+}
+
+fn command_redirect_output(mut command: Command) -> io::Result<()> {
+	command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+	let mut child = command.spawn()?;
+	thread::scope::<_, io::Result<()>>(|scope| {
+		let handle = scope.spawn::<_, io::Result<()>>(|| {
+			if let Some(stdout) = &mut child.stderr {
+				let lines = BufReader::new(stdout).lines();
+				for line in lines {
+					eprintln!("{}", line?);
+				}
+			}
+			Ok(())
+		});
+		if let Some(stdout) = &mut child.stdout {
+			let lines = BufReader::new(stdout).lines();
+			for line in lines {
+				println!("{}", line?);
+			}
+		}
+		handle.join().expect("join handle")?;
+		Ok(())
+	})?;
+	child.wait()?;
 	Ok(())
 }
 

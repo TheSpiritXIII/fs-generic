@@ -14,13 +14,13 @@ There are two helper scripts:
 First, clone this repository. Then, navigate to it. Next, run the script. Run in your shell of choice:
 
 ```bash
-RUST_LOG=info cargo run --package regen-doc
+RUST_LOG=info cargo +nightly run --package regen-doc
 ```
 
 If you already have the Rust source installed on your system and would rather use that, run:
 
 ```bash
-RUST_LOG=info RUST_SRC_DIR=path/to/rust REGEN_RUST_SRC_CONF_SKIP=1 cargo run --package regen-doc
+RUST_LOG=info RUST_SRC_DIR=path/to/rust REGEN_RUST_SRC_CONF_SKIP=1 cargo +nightly run --package regen-doc
 ```
 
 #### Environment Variables
@@ -45,5 +45,5 @@ Name                       | Default   | Description
 Run:
 
 ```bash
-RUST_LOG=info cargo run --package regen-src
+RUST_LOG=info cargo +nightly run --package regen-src
 ```
