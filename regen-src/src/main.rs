@@ -15,6 +15,7 @@ use std::process::Stdio;
 use std::thread;
 
 use log::info;
+use rustdoc_types::ItemEnum;
 use thiserror::Error;
 
 const HEADER: &str = include_str!("../data/header.rs");
@@ -160,6 +161,7 @@ fn json_to_rs(
 					generate_structs(
 						output_dir.as_ref().join("structs.rs"),
 						&mut buf,
+						doc_crate,
 						&struct_list,
 					)?;
 					buf.clear();
@@ -180,13 +182,39 @@ fn json_to_rs(
 fn generate_structs(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
+	doc_crate: &rustdoc_types::Crate,
 	struct_list: &Vec<(&String, &rustdoc_types::Item, &rustdoc_types::Struct)>,
 ) -> io::Result<()> {
 	info!("Generating structs.rs...");
-	for (name, item, _) in struct_list {
+	for (name, item, doc_struct) in struct_list {
 		writeln!(buf)?;
 		print_doc(buf, item)?;
-		writeln!(buf, "pub trait {name} {{}}")?;
+		writeln!(buf, "pub trait {name} {{")?;
+		for impl_id in &doc_struct.impls {
+			if let Some(impl_item) = doc_crate.index.get(impl_id) {
+				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
+					if doc_impl.trait_.is_some() {
+						continue;
+					}
+					for item_id in &doc_impl.items {
+						if let Some(impl_item) = doc_crate.index.get(item_id) {
+							if let ItemEnum::Function(impl_func) = &impl_item.inner {
+								write!(
+									buf,
+									"// fn {}",
+									impl_item.name.as_ref().unwrap_or(&"unknown".to_owned())
+								)?;
+								print_function_args(buf, doc_crate, impl_func)?;
+								writeln!(buf, ";")?;
+							}
+						}
+					}
+				}
+			}
+		}
+		writeln!(buf, "}}")?;
+		writeln!(buf)?;
+		writeln!(buf, "// impl {name} for std::fs::{name} {{}}")?;
 	}
 	let mut out_file =
 		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
@@ -383,7 +411,21 @@ fn print_type<W: Write>(
 			print_type(out, rustdoc_crate, doc_slice)?;
 			write!(out, "]")?;
 		}
-		_ => unimplemented!(),
+		rustdoc_types::Type::BorrowedRef {
+			lifetime,
+			mutable,
+			type_,
+		} => {
+			if lifetime.is_some() {
+				unimplemented!();
+			}
+			write!(out, "&")?;
+			if *mutable {
+				write!(out, "mut ")?;
+			}
+			print_type(out, rustdoc_crate, type_)?;
+		}
+		_ => unimplemented!("{rustdoc_type:?}"),
 	}
 	Ok(())
 }

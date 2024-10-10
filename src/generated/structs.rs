@@ -4,7 +4,13 @@
 /// A builder used to create directories in various manners.
 ///
 /// This builder also supports platform-specific options.
-pub trait DirBuilder {}
+pub trait DirBuilder {
+	// fn new() -> DirBuilder<>;
+	// fn recursive(self: &mut Self, recursive: bool, ) -> &mut Self;
+	// fn create<P: AsRef<Path<>,> + , >(self: &Self, path: P, ) -> io::Result<(),>;
+}
+
+// impl DirBuilder for std::fs::DirBuilder {}
 
 /// Entries returned by the [`ReadDir`] iterator.
 ///
@@ -21,7 +27,14 @@ pub trait DirBuilder {}
 /// Note that this [may change in the future][changes].
 ///
 /// [changes]: io#platform-specific-behavior
-pub trait DirEntry {}
+pub trait DirEntry {
+	// fn path(self: &Self, ) -> PathBuf<>;
+	// fn metadata(self: &Self, ) -> io::Result<Metadata<>,>;
+	// fn file_type(self: &Self, ) -> io::Result<FileType<>,>;
+	// fn file_name(self: &Self, ) -> OsString<>;
+}
+
+// impl DirEntry for std::fs::DirEntry {}
 
 /// An object providing access to an open file on the filesystem.
 ///
@@ -103,14 +116,43 @@ pub trait DirEntry {}
 /// [`sync_all`]: File::sync_all
 /// [`write`]: File::write
 /// [`read`]: File::read
-pub trait File {}
+pub trait File {
+	// fn open<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
+	// fn open_buffered<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<io::BufReader<File<>,>,>;
+	// fn create<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
+	// fn create_buffered<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<io::BufWriter<File<>,>,>;
+	// fn create_new<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
+	// fn options() -> OpenOptions<>;
+	// fn sync_all(self: &Self, ) -> io::Result<(),>;
+	// fn sync_data(self: &Self, ) -> io::Result<(),>;
+	// fn set_len(self: &Self, size: u64, ) -> io::Result<(),>;
+	// fn metadata(self: &Self, ) -> io::Result<Metadata<>,>;
+	// fn try_clone(self: &Self, ) -> io::Result<File<>,>;
+	// fn set_permissions(self: &Self, perm: Permissions<>, ) -> io::Result<(),>;
+	// fn set_times(self: &Self, times: FileTimes<>, ) -> io::Result<(),>;
+	// fn set_modified(self: &Self, time: SystemTime<>, ) -> io::Result<(),>;
+}
+
+// impl File for std::fs::File {}
 
 /// Representation of the various timestamps on a file.
-pub trait FileTimes {}
+pub trait FileTimes {
+	// fn new() -> Self;
+	// fn set_accessed(self: Self, t: SystemTime<>, ) -> Self;
+	// fn set_modified(self: Self, t: SystemTime<>, ) -> Self;
+}
+
+// impl FileTimes for std::fs::FileTimes {}
 
 /// A structure representing a type of file with accessors for each file type.
 /// It is returned by [`Metadata::file_type`] method.
-pub trait FileType {}
+pub trait FileType {
+	// fn is_dir(self: &Self, ) -> bool;
+	// fn is_file(self: &Self, ) -> bool;
+	// fn is_symlink(self: &Self, ) -> bool;
+}
+
+// impl FileType for std::fs::FileType {}
 
 /// Metadata information about a file.
 ///
@@ -118,7 +160,19 @@ pub trait FileType {}
 /// [`symlink_metadata`] function or method and represents known
 /// metadata about a file such as its permissions, size, modification
 /// times, etc.
-pub trait Metadata {}
+pub trait Metadata {
+	// fn file_type(self: &Self, ) -> FileType<>;
+	// fn is_dir(self: &Self, ) -> bool;
+	// fn is_file(self: &Self, ) -> bool;
+	// fn is_symlink(self: &Self, ) -> bool;
+	// fn len(self: &Self, ) -> u64;
+	// fn permissions(self: &Self, ) -> Permissions<>;
+	// fn modified(self: &Self, ) -> io::Result<SystemTime<>,>;
+	// fn accessed(self: &Self, ) -> io::Result<SystemTime<>,>;
+	// fn created(self: &Self, ) -> io::Result<SystemTime<>,>;
+}
+
+// impl Metadata for std::fs::Metadata {}
 
 /// Options and flags which can be used to configure how a file is opened.
 ///
@@ -151,7 +205,18 @@ pub trait Metadata {}
 ///
 /// let file = OpenOptions::new().read(true).write(true).create(true).open("foo.txt");
 /// ```
-pub trait OpenOptions {}
+pub trait OpenOptions {
+	// fn new() -> Self;
+	// fn read(self: &mut Self, read: bool, ) -> &mut Self;
+	// fn write(self: &mut Self, write: bool, ) -> &mut Self;
+	// fn append(self: &mut Self, append: bool, ) -> &mut Self;
+	// fn truncate(self: &mut Self, truncate: bool, ) -> &mut Self;
+	// fn create(self: &mut Self, create: bool, ) -> &mut Self;
+	// fn create_new(self: &mut Self, create_new: bool, ) -> &mut Self;
+	// fn open<P: AsRef<Path<>,> + , >(self: &Self, path: P, ) -> io::Result<File<>,>;
+}
+
+// impl OpenOptions for std::fs::OpenOptions {}
 
 /// Representation of the various permissions on a file.
 ///
@@ -161,7 +226,12 @@ pub trait OpenOptions {}
 /// through the [`PermissionsExt`] trait.
 ///
 /// [`PermissionsExt`]: crate::os::unix::fs::PermissionsExt
-pub trait Permissions {}
+pub trait Permissions {
+	// fn readonly(self: &Self, ) -> bool;
+	// fn set_readonly(self: &mut Self, readonly: bool, );
+}
+
+// impl Permissions for std::fs::Permissions {}
 
 /// Iterator over the entries in a directory.
 ///
@@ -178,3 +248,5 @@ pub trait Permissions {}
 /// This [`io::Result`] will be an [`Err`] if there's some sort of intermittent
 /// IO error during iteration.
 pub trait ReadDir {}
+
+// impl ReadDir for std::fs::ReadDir {}
