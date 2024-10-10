@@ -5,9 +5,24 @@
 ///
 /// This builder also supports platform-specific options.
 pub trait DirBuilder {
-	// fn new() -> DirBuilder<>;
+	// fn new() -> DirBuilder;
 	// fn recursive(self: &mut Self, recursive: bool, ) -> &mut Self;
-	// fn create<P: AsRef<Path<>,> + , >(self: &Self, path: P, ) -> io::Result<(),>;
+	// fn create<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<(),>;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl Debug
+	// impl DirBuilderExt
 }
 
 // impl DirBuilder for std::fs::DirBuilder {}
@@ -28,10 +43,27 @@ pub trait DirBuilder {
 ///
 /// [changes]: io#platform-specific-behavior
 pub trait DirEntry {
-	// fn path(self: &Self, ) -> PathBuf<>;
-	// fn metadata(self: &Self, ) -> io::Result<Metadata<>,>;
-	// fn file_type(self: &Self, ) -> io::Result<FileType<>,>;
-	// fn file_name(self: &Self, ) -> OsString<>;
+	// fn path(self: &Self, ) -> PathBuf;
+	// fn metadata(self: &Self, ) -> io::Result<Metadata,>;
+	// fn file_type(self: &Self, ) -> io::Result<FileType,>;
+	// fn file_name(self: &Self, ) -> OsString;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl Debug
+	// impl DirEntryExt
+	// impl DirEntryExt2
+	// impl DirEntryExt
 }
 
 // impl DirEntry for std::fs::DirEntry {}
@@ -117,20 +149,57 @@ pub trait DirEntry {
 /// [`write`]: File::write
 /// [`read`]: File::read
 pub trait File {
-	// fn open<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
-	// fn open_buffered<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<io::BufReader<File<>,>,>;
-	// fn create<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
-	// fn create_buffered<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<io::BufWriter<File<>,>,>;
-	// fn create_new<P: AsRef<Path<>,> + , >(path: P, ) -> io::Result<File<>,>;
-	// fn options() -> OpenOptions<>;
+	// fn open<P: AsRef<Path,> + , >(path: P, ) -> io::Result<File,>;
+	// fn open_buffered<P: AsRef<Path,> + , >(path: P, ) -> io::Result<io::BufReader<File,>,>;
+	// fn create<P: AsRef<Path,> + , >(path: P, ) -> io::Result<File,>;
+	// fn create_buffered<P: AsRef<Path,> + , >(path: P, ) -> io::Result<io::BufWriter<File,>,>;
+	// fn create_new<P: AsRef<Path,> + , >(path: P, ) -> io::Result<File,>;
+	// fn options() -> OpenOptions;
 	// fn sync_all(self: &Self, ) -> io::Result<(),>;
 	// fn sync_data(self: &Self, ) -> io::Result<(),>;
 	// fn set_len(self: &Self, size: u64, ) -> io::Result<(),>;
-	// fn metadata(self: &Self, ) -> io::Result<Metadata<>,>;
-	// fn try_clone(self: &Self, ) -> io::Result<File<>,>;
-	// fn set_permissions(self: &Self, perm: Permissions<>, ) -> io::Result<(),>;
-	// fn set_times(self: &Self, times: FileTimes<>, ) -> io::Result<(),>;
-	// fn set_modified(self: &Self, time: SystemTime<>, ) -> io::Result<(),>;
+	// fn metadata(self: &Self, ) -> io::Result<Metadata,>;
+	// fn try_clone(self: &Self, ) -> io::Result<File,>;
+	// fn set_permissions(self: &Self, perm: Permissions, ) -> io::Result<(),>;
+	// fn set_times(self: &Self, times: FileTimes, ) -> io::Result<(),>;
+	// fn set_modified(self: &Self, time: SystemTime, ) -> io::Result<(),>;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl Debug
+	// impl Read
+	// impl Write
+	// impl Seek
+	// impl Read
+	// impl Write
+	// impl Seek
+	// impl IsTerminal
+	// impl FileExt
+	// impl FileExt
+	// impl FileExt
+	// impl AsHandle
+	// impl From<File,>
+	// impl From<OwnedHandle,>
+	// impl AsRawHandle
+	// impl FromRawHandle
+	// impl IntoRawHandle
+	// impl AsRawFd
+	// impl FromRawFd
+	// impl IntoRawFd
+	// impl AsFd
+	// impl From<File,>
+	// impl From<OwnedFd,>
+	// impl From<File,>
 }
 
 // impl File for std::fs::File {}
@@ -138,8 +207,28 @@ pub trait File {
 /// Representation of the various timestamps on a file.
 pub trait FileTimes {
 	// fn new() -> Self;
-	// fn set_accessed(self: Self, t: SystemTime<>, ) -> Self;
-	// fn set_modified(self: Self, t: SystemTime<>, ) -> Self;
+	// fn set_accessed(self: Self, t: SystemTime, ) -> Self;
+	// fn set_modified(self: Self, t: SystemTime, ) -> Self;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl CloneToUninit
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl ToOwned
+	// impl Copy
+	// impl Clone
+	// impl Debug
+	// impl Default
+	// impl FileTimesExt
 }
 
 // impl FileTimes for std::fs::FileTimes {}
@@ -150,6 +239,31 @@ pub trait FileType {
 	// fn is_dir(self: &Self, ) -> bool;
 	// fn is_file(self: &Self, ) -> bool;
 	// fn is_symlink(self: &Self, ) -> bool;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl CloneToUninit
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl ToOwned
+	// impl Copy
+	// impl Clone
+	// impl StructuralPartialEq
+	// impl PartialEq
+	// impl Eq
+	// impl Hash
+	// impl Debug
+	// impl FileTypeExt
+	// impl FileTypeExt
+	// impl FileTypeExt
 }
 
 // impl FileType for std::fs::FileType {}
@@ -161,15 +275,36 @@ pub trait FileType {
 /// metadata about a file such as its permissions, size, modification
 /// times, etc.
 pub trait Metadata {
-	// fn file_type(self: &Self, ) -> FileType<>;
+	// fn file_type(self: &Self, ) -> FileType;
 	// fn is_dir(self: &Self, ) -> bool;
 	// fn is_file(self: &Self, ) -> bool;
 	// fn is_symlink(self: &Self, ) -> bool;
 	// fn len(self: &Self, ) -> u64;
-	// fn permissions(self: &Self, ) -> Permissions<>;
-	// fn modified(self: &Self, ) -> io::Result<SystemTime<>,>;
-	// fn accessed(self: &Self, ) -> io::Result<SystemTime<>,>;
-	// fn created(self: &Self, ) -> io::Result<SystemTime<>,>;
+	// fn permissions(self: &Self, ) -> Permissions;
+	// fn modified(self: &Self, ) -> io::Result<SystemTime,>;
+	// fn accessed(self: &Self, ) -> io::Result<SystemTime,>;
+	// fn created(self: &Self, ) -> io::Result<SystemTime,>;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl CloneToUninit
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl ToOwned
+	// impl Clone
+	// impl Debug
+	// impl MetadataExt
+	// impl MetadataExt
+	// impl MetadataExt
+	// impl MetadataExt
 }
 
 // impl Metadata for std::fs::Metadata {}
@@ -213,7 +348,27 @@ pub trait OpenOptions {
 	// fn truncate(self: &mut Self, truncate: bool, ) -> &mut Self;
 	// fn create(self: &mut Self, create: bool, ) -> &mut Self;
 	// fn create_new(self: &mut Self, create_new: bool, ) -> &mut Self;
-	// fn open<P: AsRef<Path<>,> + , >(self: &Self, path: P, ) -> io::Result<File<>,>;
+	// fn open<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<File,>;
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl CloneToUninit
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl ToOwned
+	// impl Clone
+	// impl Debug
+	// impl OpenOptionsExt
+	// impl OpenOptionsExt
+	// impl OpenOptionsExt
 }
 
 // impl OpenOptions for std::fs::OpenOptions {}
@@ -229,6 +384,27 @@ pub trait OpenOptions {
 pub trait Permissions {
 	// fn readonly(self: &Self, ) -> bool;
 	// fn set_readonly(self: &mut Self, readonly: bool, );
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl CloneToUninit
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl ToOwned
+	// impl Clone
+	// impl StructuralPartialEq
+	// impl PartialEq
+	// impl Eq
+	// impl Debug
+	// impl PermissionsExt
 }
 
 // impl Permissions for std::fs::Permissions {}
@@ -247,6 +423,23 @@ pub trait Permissions {
 ///
 /// This [`io::Result`] will be an [`Err`] if there's some sort of intermittent
 /// IO error during iteration.
-pub trait ReadDir {}
+pub trait ReadDir {
+	// impl Send
+	// impl Sync
+	// impl Freeze
+	// impl Unpin
+	// impl UnwindSafe
+	// impl RefUnwindSafe
+	// impl Borrow<T,>
+	// impl BorrowMut<T,>
+	// impl Into<U,>
+	// impl From<T,>
+	// impl TryInto<U,>
+	// impl TryFrom<U,>
+	// impl Any
+	// impl IntoIterator
+	// impl Debug
+	// impl Iterator
+}
 
 // impl ReadDir for std::fs::ReadDir {}

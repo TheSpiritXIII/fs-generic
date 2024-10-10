@@ -193,7 +193,10 @@ fn generate_structs(
 		for impl_id in &doc_struct.impls {
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
-					if doc_impl.trait_.is_some() {
+					if let Some(impl_trait) = &doc_impl.trait_ {
+						write!(buf, "// impl ")?;
+						print_path(buf, doc_crate, impl_trait)?;
+						writeln!(buf)?;
 						continue;
 					}
 					for item_id in &doc_impl.items {
@@ -356,22 +359,41 @@ fn print_generic_arg<W: Write>(
 		bindings,
 	} = arg
 	{
-		write!(out, "<")?;
-		for arg in args {
-			match arg {
-				rustdoc_types::GenericArg::Type(generic_type) => {
-					print_type(out, doc_crate, generic_type)?;
+		if !args.is_empty() {
+			write!(out, "<")?;
+			for arg in args {
+				match arg {
+					rustdoc_types::GenericArg::Type(generic_type) => {
+						print_type(out, doc_crate, generic_type)?;
+					}
+					_ => unimplemented!(),
 				}
-				_ => unimplemented!(),
+				write!(out, ",")?;
 			}
-			write!(out, ",")?;
+			write!(out, ">")?;
 		}
-		write!(out, ">")?;
 		if !bindings.is_empty() {
 			unimplemented!();
 		}
 	} else {
 		unimplemented!()
+	}
+	Ok(())
+}
+
+fn print_path<W: Write>(
+	out: &mut W,
+	rustdoc_crate: &rustdoc_types::Crate,
+	path: &rustdoc_types::Path,
+) -> io::Result<()> {
+	const CRATE_PATH: &str = "crate::";
+	if path.name.starts_with(CRATE_PATH) {
+		write!(out, "std::{}", &path.name[CRATE_PATH.len()..])?;
+	} else {
+		write!(out, "{}", path.name)?;
+	}
+	if let Some(args) = &path.args {
+		print_generic_arg(out, rustdoc_crate, args)?;
 	}
 	Ok(())
 }
@@ -383,15 +405,7 @@ fn print_type<W: Write>(
 ) -> io::Result<()> {
 	match rustdoc_type {
 		rustdoc_types::Type::ResolvedPath(path) => {
-			const CRATE_PATH: &str = "crate::";
-			if path.name.starts_with(CRATE_PATH) {
-				write!(out, "std::{}", &path.name[CRATE_PATH.len()..])?;
-			} else {
-				write!(out, "{}", path.name)?;
-			}
-			if let Some(args) = &path.args {
-				print_generic_arg(out, rustdoc_crate, args)?;
-			}
+			print_path(out, rustdoc_crate, path)?;
 		}
 		rustdoc_types::Type::Generic(doc_generic) => {
 			write!(out, "{doc_generic}")?;
