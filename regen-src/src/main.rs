@@ -27,24 +27,21 @@ fn main() -> anyhow::Result<()> {
 	let input_data = fs::read_to_string(input_path)?;
 	let doc_crate = serde_json::from_str(&input_data)?;
 
-	let output_path = path::absolute("src/generated.rs")?;
-	info!("Regenerating source into {}...", output_path.display());
-	let mut buf = Vec::new();
-	write!(buf, "{HEADER}")?;
-	json_to_rs(&doc_crate, &mut buf)?;
-
-	let mut out_file =
-		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
-	out_file.write_all(&buf)?;
+	let output_dir = path::absolute("src/generated/")?;
+	info!("Regenerating source into {}...", output_dir.display());
+	json_to_rs(&doc_crate, &output_dir)?;
 
 	info!("Formatting generated files...");
-	rustfmt(&output_path)?;
+	let paths = fs::read_dir(&output_dir)?
+		.map(|entry| entry.map(|entry| entry.path().as_os_str().to_string_lossy().into_owned()))
+		.collect::<Result<Vec<_>, _>>()?;
+	rustfmt(&paths)?;
 
 	info!("Done!");
 	Ok(())
 }
 
-fn rustfmt(file: impl AsRef<Path>) -> io::Result<()> {
+fn rustfmt(paths: &[String]) -> io::Result<()> {
 	let cargo_path = env!("CARGO");
 	let manifest_path = env!("CARGO_MANIFEST_DIR");
 	let mut command = Command::new(cargo_path);
@@ -52,8 +49,8 @@ fn rustfmt(file: impl AsRef<Path>) -> io::Result<()> {
 	command.args([
 		"fmt",
 		"--",
-		&file.as_ref().as_os_str().to_string_lossy(),
 	]);
+	command.args(paths);
 	command_redirect_output(command)
 }
 
@@ -111,23 +108,38 @@ fn doc_root_module(
 	}
 }
 
-fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result<(), SourceError> {
+fn json_to_rs(
+	doc_crate: &rustdoc_types::Crate,
+	output_dir: impl AsRef<Path>,
+) -> Result<(), SourceError> {
+	let mut buf = Vec::new();
 	let doc_module = doc_root_module(doc_crate).map_err(SourceError::ParseError)?;
 	for id in &doc_module.items {
 		if let Some(item) = doc_crate.index.get(id) {
 			if let rustdoc_types::ItemEnum::Module(item_module) = &item.inner {
 				if item.name.as_ref().is_some_and(|name| name == "fs") {
 					let mut function_list = Vec::new();
+					let mut struct_list = Vec::new();
+
 					for id in &item_module.items {
 						let Some(item) = doc_crate.index.get(id) else {
 							continue;
 						};
-						if let rustdoc_types::ItemEnum::Function(function) = &item.inner {
-							if let Some(name) = &item.name {
-								function_list.push((name, item, function));
+						match &item.inner {
+							rustdoc_types::ItemEnum::Function(function) => {
+								if let Some(name) = &item.name {
+									function_list.push((name, item, function));
+								}
 							}
+							rustdoc_types::ItemEnum::Struct(doc_struct) => {
+								if let Some(name) = &item.name {
+									struct_list.push((name, item, doc_struct));
+								}
+							}
+							_ => {}
 						}
 					}
+
 					function_list.sort_by(|lhs, rhs| -> Ordering {
 						let name_ordering = lhs.0.cmp(rhs.0);
 						if name_ordering == Ordering::Equal {
@@ -136,39 +148,101 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 							name_ordering
 						}
 					});
-
-					writeln!(out)?;
-					writeln!(out, "pub trait Fs {{")?;
-					for (name, item, function) in &function_list {
-						writeln!(out)?;
-						print_doc(out, item)?;
-						write!(out, "fn {name}")?;
-						print_function_args(out, doc_crate, function)?;
-						writeln!(out, ";")?;
-					}
-					writeln!(out, "}}")?;
-
-					writeln!(out)?;
-					writeln!(out, "pub struct Native {{}}")?;
-					writeln!(out)?;
-					writeln!(out, "impl Fs for Native {{")?;
-					for (name, _, function) in &function_list {
-						writeln!(out)?;
-						write!(out, "fn {name}")?;
-						print_function_args(out, doc_crate, function)?;
-						writeln!(out, " {{")?;
-						write!(out, "	std::fs::{name}(")?;
-						for (input_name, _) in &function.decl.inputs {
-							write!(out, "{input_name}, ")?;
+					struct_list.sort_by(|lhs, rhs| -> Ordering {
+						let name_ordering = lhs.0.cmp(rhs.0);
+						if name_ordering == Ordering::Equal {
+							lhs.1.id.0.cmp(&rhs.1.id.0)
+						} else {
+							name_ordering
 						}
-						writeln!(out, ")")?;
-						writeln!(out, "}}")?;
-					}
-					writeln!(out, "}}")?;
+					});
+
+					generate_structs(
+						output_dir.as_ref().join("structs.rs"),
+						&mut buf,
+						&struct_list,
+					)?;
+					buf.clear();
+
+					generate_functions(
+						output_dir.as_ref().join("functions.rs"),
+						&mut buf,
+						doc_crate,
+						&function_list,
+					)?;
 				}
 			}
 		}
 	}
+	Ok(())
+}
+
+fn generate_structs(
+	output_path: impl AsRef<Path>,
+	buf: &mut Vec<u8>,
+	struct_list: &Vec<(&String, &rustdoc_types::Item, &rustdoc_types::Struct)>,
+) -> io::Result<()> {
+	info!("Generating structs.rs...");
+	for (name, item, _) in struct_list {
+		writeln!(buf)?;
+		print_doc(buf, item)?;
+		writeln!(buf, "pub trait {name} {{}}")?;
+	}
+	let mut out_file =
+		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
+	write!(out_file, "{HEADER}")?;
+	out_file.write_all(buf)?;
+	Ok(())
+}
+
+fn generate_functions(
+	output_path: impl AsRef<Path>,
+	buf: &mut Vec<u8>,
+	doc_crate: &rustdoc_types::Crate,
+	function_list: &Vec<(&String, &rustdoc_types::Item, &rustdoc_types::Function)>,
+) -> io::Result<()> {
+	info!("Generating functions.rs...");
+	writeln!(buf)?;
+	writeln!(buf, "pub trait Fs {{")?;
+	for (name, item, function) in function_list {
+		writeln!(buf)?;
+		print_doc(buf, item)?;
+		write!(buf, "fn {name}")?;
+		print_function_args(buf, doc_crate, function)?;
+		writeln!(buf, ";")?;
+	}
+	writeln!(buf, "}}")?;
+
+	writeln!(buf)?;
+	writeln!(buf, "pub struct Native {{}}")?;
+	writeln!(buf)?;
+	writeln!(buf, "impl Fs for Native {{")?;
+	for (name, _, function) in function_list {
+		writeln!(buf)?;
+		write!(buf, "fn {name}")?;
+		print_function_args(buf, doc_crate, function)?;
+		writeln!(buf, " {{")?;
+		write!(buf, "	std::fs::{name}(")?;
+		for (input_name, _) in &function.decl.inputs {
+			write!(buf, "{input_name}, ")?;
+		}
+		writeln!(buf, ")")?;
+		writeln!(buf, "}}")?;
+	}
+	writeln!(buf, "}}")?;
+
+	let mut out_file =
+		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
+	write!(out_file, "{HEADER}")?;
+	write!(
+		out_file,
+		"use std::io;
+use std::fs::Metadata;
+use std::fs::ReadDir;
+use std::fs::Permissions;
+"
+	)?;
+	out_file.write_all(buf)?;
 	Ok(())
 }
 
