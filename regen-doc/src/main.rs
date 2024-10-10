@@ -1,9 +1,11 @@
 #![warn(clippy::pedantic)]
+use std::any::Any;
 use std::env;
 use std::fs;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::{self};
+use std::panic::panic_any;
 use std::path::Path;
 use std::path::PathBuf;
 use std::path::{self};
@@ -224,11 +226,18 @@ fn command_redirect_output(mut command: Command) -> io::Result<()> {
 				println!("{}", line?);
 			}
 		}
-		handle.join().expect("join handle")?;
+		propagate_panic(handle.join())?;
 		Ok(())
 	})?;
 	child.wait()?;
 	Ok(())
+}
+
+fn propagate_panic<T>(handle_result: Result<T, Box<dyn Any + Send>>) -> T {
+	match handle_result {
+		Ok(result) => result,
+		Err(a) => panic_any(a),
+	}
 }
 
 fn is_truthy(value: &str) -> Option<bool> {

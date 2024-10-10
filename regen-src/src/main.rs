@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+use std::any::Any;
 use std::cmp::Ordering;
 use std::fs;
 use std::fs::OpenOptions;
@@ -6,6 +7,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
 use std::io::{self};
+use std::panic::panic_any;
 use std::path::Path;
 use std::path::{self};
 use std::process::Command;
@@ -50,7 +52,7 @@ fn rustfmt(file: impl AsRef<Path>) -> io::Result<()> {
 	command.args([
 		"fmt",
 		"--",
-		file.as_ref().as_os_str().to_str().unwrap(),
+		&file.as_ref().as_os_str().to_string_lossy(),
 	]);
 	command_redirect_output(command)
 }
@@ -75,11 +77,18 @@ fn command_redirect_output(mut command: Command) -> io::Result<()> {
 				println!("{}", line?);
 			}
 		}
-		handle.join().expect("join handle")?;
+		propagate_panic(handle.join())?;
 		Ok(())
 	})?;
 	child.wait()?;
 	Ok(())
+}
+
+fn propagate_panic<T>(handle_result: Result<T, Box<dyn Any + Send>>) -> T {
+	match handle_result {
+		Ok(result) => result,
+		Err(a) => panic_any(a),
+	}
 }
 
 #[derive(Error, Debug)]
@@ -90,13 +99,20 @@ pub enum SourceError {
 	ParseError(&'static str),
 }
 
-fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result<(), SourceError> {
+fn doc_root_module(
+	doc_crate: &rustdoc_types::Crate,
+) -> Result<&rustdoc_types::Module, &'static str> {
 	let Some(root_module) = doc_crate.index.get(&doc_crate.root) else {
-		return Err(SourceError::ParseError("could not find root item in index"));
+		return Err("could not find root item in index");
 	};
-	let rustdoc_types::ItemEnum::Module(doc_module) = &root_module.inner else {
-		return Err(SourceError::ParseError("expected root to be a module"));
-	};
+	match &root_module.inner {
+		rustdoc_types::ItemEnum::Module(doc_module) => Ok(doc_module),
+		_ => Err("expected root to be a module"),
+	}
+}
+
+fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result<(), SourceError> {
+	let doc_module = doc_root_module(doc_crate).map_err(SourceError::ParseError)?;
 	for id in &doc_module.items {
 		if let Some(item) = doc_crate.index.get(id) {
 			if let rustdoc_types::ItemEnum::Module(item_module) = &item.inner {
@@ -123,10 +139,11 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 
 					writeln!(out)?;
 					writeln!(out, "pub trait Fs {{")?;
-					for (_, item, function) in &function_list {
+					for (name, item, function) in &function_list {
 						writeln!(out)?;
 						print_doc(out, item)?;
-						print_function_definition(out, doc_crate, item, function)?;
+						write!(out, "fn {name}")?;
+						print_function_args(out, doc_crate, function)?;
 						writeln!(out, ";")?;
 					}
 					writeln!(out, "}}")?;
@@ -135,9 +152,17 @@ fn json_to_rs<W: Write>(doc_crate: &rustdoc_types::Crate, out: &mut W) -> Result
 					writeln!(out, "pub struct Native {{}}")?;
 					writeln!(out)?;
 					writeln!(out, "impl Fs for Native {{")?;
-					for (_, item, function) in &function_list {
+					for (name, _, function) in &function_list {
 						writeln!(out)?;
-						print_function_wrapper(out, doc_crate, item, function, "std::fs::")?;
+						write!(out, "fn {name}")?;
+						print_function_args(out, doc_crate, function)?;
+						writeln!(out, " {{")?;
+						write!(out, "	std::fs::{name}(")?;
+						for (input_name, _) in &function.decl.inputs {
+							write!(out, "{input_name}, ")?;
+						}
+						writeln!(out, ")")?;
+						writeln!(out, "}}")?;
 					}
 					writeln!(out, "}}")?;
 				}
@@ -156,13 +181,11 @@ fn print_doc<W: Write>(out: &mut W, item: &rustdoc_types::Item) -> io::Result<()
 	Ok(())
 }
 
-fn print_function_definition<W: Write>(
+fn print_function_args<W: Write>(
 	out: &mut W,
 	doc_crate: &rustdoc_types::Crate,
-	item: &rustdoc_types::Item,
 	function: &rustdoc_types::Function,
 ) -> io::Result<()> {
-	write!(out, "fn {}", item.name.as_ref().unwrap())?;
 	if !function.generics.params.is_empty() {
 		write!(out, "<")?;
 		for generic_param in &function.generics.params {
@@ -218,25 +241,6 @@ fn print_function_definition<W: Write>(
 		write!(out, " -> ")?;
 		print_type(out, doc_crate, output_type)?;
 	}
-	Ok(())
-}
-
-fn print_function_wrapper<W: Write>(
-	out: &mut W,
-	doc_crate: &rustdoc_types::Crate,
-	item: &rustdoc_types::Item,
-	function: &rustdoc_types::Function,
-	prefix: &str,
-) -> io::Result<()> {
-	print_function_definition(out, doc_crate, item, function)?;
-
-	writeln!(out, " {{")?;
-	write!(out, "	{prefix}{}(", item.name.as_ref().unwrap())?;
-	for (input_name, _) in &function.decl.inputs {
-		write!(out, "{input_name}, ")?;
-	}
-	writeln!(out, ")")?;
-	writeln!(out, "}}")?;
 	Ok(())
 }
 
