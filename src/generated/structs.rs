@@ -8,21 +8,21 @@ pub trait DirBuilder {
 	// fn new() -> DirBuilder;
 	// fn recursive(self: &mut Self, recursive: bool, ) -> &mut Self;
 	// fn create<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<(),>;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl Debug
-	// impl DirBuilderExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::DirBuilderExt
 }
 
 // impl DirBuilder for std::fs::DirBuilder {}
@@ -47,23 +47,23 @@ pub trait DirEntry {
 	// fn metadata(self: &Self, ) -> io::Result<Metadata,>;
 	// fn file_type(self: &Self, ) -> io::Result<FileType,>;
 	// fn file_name(self: &Self, ) -> OsString;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl Debug
-	// impl DirEntryExt
-	// impl DirEntryExt2
-	// impl DirEntryExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::DirEntryExt
+	// impl std::os::unix::fs::DirEntryExt2
+	// impl std::os::wasi::fs::DirEntryExt
 }
 
 // impl DirEntry for std::fs::DirEntry {}
@@ -163,33 +163,33 @@ pub trait File {
 	// fn set_permissions(self: &Self, perm: Permissions, ) -> io::Result<(),>;
 	// fn set_times(self: &Self, times: FileTimes, ) -> io::Result<(),>;
 	// fn set_modified(self: &Self, time: SystemTime, ) -> io::Result<(),>;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl Debug
-	// impl Read
-	// impl Write
-	// impl Seek
-	// impl Read
-	// impl Write
-	// impl Seek
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl core::fmt::Debug
+	// impl std::io::Read
+	// impl std::io::Write
+	// impl std::io::Seek
+	// impl std::io::Read
+	// impl std::io::Write
+	// impl std::io::Seek
 	// impl IsTerminal
-	// impl FileExt
-	// impl FileExt
-	// impl FileExt
+	// impl std::os::unix::fs::FileExt
+	// impl std::os::wasi::fs::FileExt
+	// impl std::os::windows::fs::FileExt
 	// impl AsHandle
-	// impl From<File,>
-	// impl From<OwnedHandle,>
+	// impl core::convert::From<File,>
+	// impl core::convert::From<OwnedHandle,>
 	// impl AsRawHandle
 	// impl FromRawHandle
 	// impl IntoRawHandle
@@ -197,9 +197,9 @@ pub trait File {
 	// impl FromRawFd
 	// impl IntoRawFd
 	// impl AsFd
-	// impl From<File,>
-	// impl From<OwnedFd,>
-	// impl From<File,>
+	// impl core::convert::From<File,>
+	// impl core::convert::From<OwnedFd,>
+	// impl core::convert::From<File,>
 }
 
 // impl File for std::fs::File {}
@@ -209,26 +209,26 @@ pub trait FileTimes {
 	// fn new() -> Self;
 	// fn set_accessed(self: Self, t: SystemTime, ) -> Self;
 	// fn set_modified(self: Self, t: SystemTime, ) -> Self;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl CloneToUninit
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl ToOwned
-	// impl Copy
-	// impl Clone
-	// impl Debug
-	// impl Default
-	// impl FileTimesExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::clone::CloneToUninit
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl alloc::borrow::ToOwned
+	// impl core::marker::Copy
+	// impl core::clone::Clone
+	// impl core::fmt::Debug
+	// impl core::default::Default
+	// impl std::os::windows::fs::FileTimesExt
 }
 
 // impl FileTimes for std::fs::FileTimes {}
@@ -239,31 +239,31 @@ pub trait FileType {
 	// fn is_dir(self: &Self, ) -> bool;
 	// fn is_file(self: &Self, ) -> bool;
 	// fn is_symlink(self: &Self, ) -> bool;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl CloneToUninit
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl ToOwned
-	// impl Copy
-	// impl Clone
-	// impl StructuralPartialEq
-	// impl PartialEq
-	// impl Eq
-	// impl Hash
-	// impl Debug
-	// impl FileTypeExt
-	// impl FileTypeExt
-	// impl FileTypeExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::clone::CloneToUninit
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl alloc::borrow::ToOwned
+	// impl core::marker::Copy
+	// impl core::clone::Clone
+	// impl core::marker::StructuralPartialEq
+	// impl core::cmp::PartialEq
+	// impl core::cmp::Eq
+	// impl core::hash::Hash
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::FileTypeExt
+	// impl std::os::wasi::fs::FileTypeExt
+	// impl std::os::windows::fs::FileTypeExt
 }
 
 // impl FileType for std::fs::FileType {}
@@ -284,27 +284,27 @@ pub trait Metadata {
 	// fn modified(self: &Self, ) -> io::Result<SystemTime,>;
 	// fn accessed(self: &Self, ) -> io::Result<SystemTime,>;
 	// fn created(self: &Self, ) -> io::Result<SystemTime,>;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl CloneToUninit
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl ToOwned
-	// impl Clone
-	// impl Debug
-	// impl MetadataExt
-	// impl MetadataExt
-	// impl MetadataExt
-	// impl MetadataExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::clone::CloneToUninit
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl alloc::borrow::ToOwned
+	// impl core::clone::Clone
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::MetadataExt
+	// impl std::os::linux::fs::MetadataExt
+	// impl std::os::wasi::fs::MetadataExt
+	// impl std::os::windows::fs::MetadataExt
 }
 
 // impl Metadata for std::fs::Metadata {}
@@ -349,26 +349,26 @@ pub trait OpenOptions {
 	// fn create(self: &mut Self, create: bool, ) -> &mut Self;
 	// fn create_new(self: &mut Self, create_new: bool, ) -> &mut Self;
 	// fn open<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<File,>;
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl CloneToUninit
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl ToOwned
-	// impl Clone
-	// impl Debug
-	// impl OpenOptionsExt
-	// impl OpenOptionsExt
-	// impl OpenOptionsExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::clone::CloneToUninit
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl alloc::borrow::ToOwned
+	// impl core::clone::Clone
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::OpenOptionsExt
+	// impl std::os::wasi::fs::OpenOptionsExt
+	// impl std::os::windows::fs::OpenOptionsExt
 }
 
 // impl OpenOptions for std::fs::OpenOptions {}
@@ -384,27 +384,27 @@ pub trait OpenOptions {
 pub trait Permissions {
 	// fn readonly(self: &Self, ) -> bool;
 	// fn set_readonly(self: &mut Self, readonly: bool, );
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl CloneToUninit
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl ToOwned
-	// impl Clone
-	// impl StructuralPartialEq
-	// impl PartialEq
-	// impl Eq
-	// impl Debug
-	// impl PermissionsExt
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::clone::CloneToUninit
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl alloc::borrow::ToOwned
+	// impl core::clone::Clone
+	// impl core::marker::StructuralPartialEq
+	// impl core::cmp::PartialEq
+	// impl core::cmp::Eq
+	// impl core::fmt::Debug
+	// impl std::os::unix::fs::PermissionsExt
 }
 
 // impl Permissions for std::fs::Permissions {}
@@ -424,22 +424,22 @@ pub trait Permissions {
 /// This [`io::Result`] will be an [`Err`] if there's some sort of intermittent
 /// IO error during iteration.
 pub trait ReadDir {
-	// impl Send
-	// impl Sync
-	// impl Freeze
-	// impl Unpin
-	// impl UnwindSafe
-	// impl RefUnwindSafe
-	// impl Borrow<T,>
-	// impl BorrowMut<T,>
-	// impl Into<U,>
-	// impl From<T,>
-	// impl TryInto<U,>
-	// impl TryFrom<U,>
-	// impl Any
-	// impl IntoIterator
-	// impl Debug
-	// impl Iterator
+	// impl core::marker::Send
+	// impl core::marker::Sync
+	// impl core::marker::Freeze
+	// impl core::marker::Unpin
+	// impl core::panic::unwind_safe::UnwindSafe
+	// impl core::panic::unwind_safe::RefUnwindSafe
+	// impl core::borrow::Borrow<T,>
+	// impl core::borrow::BorrowMut<T,>
+	// impl core::convert::Into<U,>
+	// impl core::convert::From<T,>
+	// impl core::convert::TryInto<U,>
+	// impl core::convert::TryFrom<U,>
+	// impl core::any::Any
+	// impl core::iter::traits::collect::IntoIterator
+	// impl core::fmt::Debug
+	// impl core::iter::traits::iterator::Iterator
 }
 
 // impl ReadDir for std::fs::ReadDir {}

@@ -22,11 +22,30 @@ pub fn write_doc<W: Write>(out: &mut W, item: &Item) -> io::Result<()> {
 }
 
 pub fn write_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Result<()> {
-	const CRATE_PATH: &str = "crate::";
-	if let Some(name) = path.name.strip_prefix(CRATE_PATH) {
-		write!(out, "std::{name}")?;
+	if let Some(item_summary) = root.paths.get(&path.id) {
+		for i in 0..item_summary.path.len() {
+			let path = &item_summary.path[i];
+			write!(out, "{path}")?;
+			if i != item_summary.path.len() - 1 {
+				write!(out, "::")?;
+			}
+		}
 	} else {
 		write!(out, "{}", path.name)?;
+	}
+	if let Some(args) = &path.args {
+		write_generic_args(out, root, args)?;
+	}
+	Ok(())
+}
+
+pub fn write_resolved_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Result<()> {
+	const CRATE_PATH: &str = "crate::";
+	let name = &path.name;
+	if let Some(name) = name.strip_prefix(CRATE_PATH) {
+		write!(out, "std::{name}")?;
+	} else {
+		write!(out, "{name}")?;
 	}
 	if let Some(args) = &path.args {
 		write_generic_args(out, root, args)?;
@@ -37,7 +56,7 @@ pub fn write_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Resul
 pub fn write_type<W: Write>(out: &mut W, root: &Crate, item_type: &Type) -> io::Result<()> {
 	match item_type {
 		Type::ResolvedPath(path) => {
-			write_path(out, root, path)?;
+			write_resolved_path(out, root, path)?;
 		}
 		Type::Generic(doc_generic) => {
 			write!(out, "{doc_generic}")?;
