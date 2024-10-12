@@ -1,4 +1,6 @@
 #![warn(clippy::pedantic)]
+mod print;
+
 use std::any::Any;
 use std::cmp::Ordering;
 use std::fs;
@@ -213,14 +215,14 @@ fn generate_structs(
 	info!("Generating structs.rs...");
 	for item in struct_list {
 		writeln!(buf)?;
-		print_doc(buf, item.item)?;
+		print::write_doc(buf, item.item)?;
 		writeln!(buf, "pub trait {} {{", item.name)?;
 		for impl_id in &item.inner.impls {
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
 						write!(buf, "// impl ")?;
-						print_path(buf, doc_crate, impl_trait)?;
+						print::write_path(buf, doc_crate, impl_trait)?;
 						writeln!(buf)?;
 						continue;
 					}
@@ -232,7 +234,7 @@ fn generate_structs(
 									"// fn {}",
 									impl_item.name.as_ref().unwrap_or(&"unknown".to_owned())
 								)?;
-								print_function_args(buf, doc_crate, impl_func)?;
+								print::write_function_args(buf, doc_crate, impl_func)?;
 								writeln!(buf, ";")?;
 							}
 						}
@@ -262,9 +264,8 @@ fn generate_functions(
 	writeln!(buf, "pub trait Fs {{")?;
 	for item in function_list {
 		writeln!(buf)?;
-		print_doc(buf, item.item)?;
-		write!(buf, "fn {}", item.name)?;
-		print_function_args(buf, doc_crate, item.inner)?;
+		print::write_doc(buf, item.item)?;
+		print::write_function(buf, doc_crate, item.name, item.inner)?;
 		writeln!(buf, ";")?;
 	}
 	writeln!(buf, "}}")?;
@@ -275,8 +276,7 @@ fn generate_functions(
 	writeln!(buf, "impl Fs for Native {{")?;
 	for item in function_list {
 		writeln!(buf)?;
-		write!(buf, "fn {}", item.name)?;
-		print_function_args(buf, doc_crate, item.inner)?;
+		print::write_function(buf, doc_crate, item.name, item.inner)?;
 		writeln!(buf, " {{")?;
 		write!(buf, "	std::fs::{}(", item.name)?;
 		for (input_name, _) in &item.inner.decl.inputs {
@@ -299,172 +299,5 @@ use std::fs::Permissions;
 "
 	)?;
 	out_file.write_all(buf)?;
-	Ok(())
-}
-
-fn print_doc<W: Write>(out: &mut W, item: &rustdoc_types::Item) -> io::Result<()> {
-	if let Some(docs) = &item.docs {
-		for line in docs.lines() {
-			writeln!(out, "/// {line}")?;
-		}
-	}
-	Ok(())
-}
-
-fn print_function_args<W: Write>(
-	out: &mut W,
-	doc_crate: &rustdoc_types::Crate,
-	function: &rustdoc_types::Function,
-) -> io::Result<()> {
-	if !function.generics.params.is_empty() {
-		write!(out, "<")?;
-		for generic_param in &function.generics.params {
-			write!(out, "{}: ", generic_param.name)?;
-			match &generic_param.kind {
-				rustdoc_types::GenericParamDefKind::Type {
-					bounds,
-					default,
-					synthetic,
-				} => {
-					for bound in bounds {
-						match bound {
-							rustdoc_types::GenericBound::TraitBound {
-								trait_,
-								generic_params,
-								modifier,
-							} => {
-								if !generic_params.is_empty()
-									|| *modifier != rustdoc_types::TraitBoundModifier::None
-								{
-									unimplemented!();
-								}
-								write!(out, "{}", trait_.name)?;
-								if let Some(args) = &trait_.args {
-									print_generic_arg(out, doc_crate, args)?;
-								}
-								write!(out, " + ")?;
-							}
-							_ => todo!(),
-						}
-					}
-					if *synthetic || default.is_some() {
-						unimplemented!();
-					}
-				}
-				_ => unimplemented!(),
-			}
-			// rustdoc_pretty_type(out, &doc_crate, &generic_param.kind)?;
-			write!(out, ", ")?;
-		}
-		write!(out, ">")?;
-	}
-
-	write!(out, "(")?;
-	for (input_name, input_type) in &function.decl.inputs {
-		write!(out, "{input_name}: ")?;
-		print_type(out, doc_crate, input_type)?;
-		write!(out, ", ")?;
-	}
-	write!(out, ")")?;
-
-	if let Some(output_type) = &function.decl.output {
-		write!(out, " -> ")?;
-		print_type(out, doc_crate, output_type)?;
-	}
-	Ok(())
-}
-
-fn print_generic_arg<W: Write>(
-	out: &mut W,
-	doc_crate: &rustdoc_types::Crate,
-	arg: &rustdoc_types::GenericArgs,
-) -> io::Result<()> {
-	if let rustdoc_types::GenericArgs::AngleBracketed {
-		args,
-		bindings,
-	} = arg
-	{
-		if !args.is_empty() {
-			write!(out, "<")?;
-			for arg in args {
-				match arg {
-					rustdoc_types::GenericArg::Type(generic_type) => {
-						print_type(out, doc_crate, generic_type)?;
-					}
-					_ => unimplemented!(),
-				}
-				write!(out, ",")?;
-			}
-			write!(out, ">")?;
-		}
-		if !bindings.is_empty() {
-			unimplemented!();
-		}
-	} else {
-		unimplemented!()
-	}
-	Ok(())
-}
-
-fn print_path<W: Write>(
-	out: &mut W,
-	rustdoc_crate: &rustdoc_types::Crate,
-	path: &rustdoc_types::Path,
-) -> io::Result<()> {
-	const CRATE_PATH: &str = "crate::";
-	if path.name.starts_with(CRATE_PATH) {
-		write!(out, "std::{}", &path.name[CRATE_PATH.len()..])?;
-	} else {
-		write!(out, "{}", path.name)?;
-	}
-	if let Some(args) = &path.args {
-		print_generic_arg(out, rustdoc_crate, args)?;
-	}
-	Ok(())
-}
-
-fn print_type<W: Write>(
-	out: &mut W,
-	rustdoc_crate: &rustdoc_types::Crate,
-	rustdoc_type: &rustdoc_types::Type,
-) -> io::Result<()> {
-	match rustdoc_type {
-		rustdoc_types::Type::ResolvedPath(path) => {
-			print_path(out, rustdoc_crate, path)?;
-		}
-		rustdoc_types::Type::Generic(doc_generic) => {
-			write!(out, "{doc_generic}")?;
-		}
-		rustdoc_types::Type::Primitive(doc_primitive) => {
-			write!(out, "{doc_primitive}")?;
-		}
-		rustdoc_types::Type::Tuple(doc_tuple) => {
-			write!(out, "(")?;
-			for doc_tuple in doc_tuple {
-				print_type(out, rustdoc_crate, doc_tuple)?;
-			}
-			write!(out, ")")?;
-		}
-		rustdoc_types::Type::Slice(doc_slice) => {
-			write!(out, "[")?;
-			print_type(out, rustdoc_crate, doc_slice)?;
-			write!(out, "]")?;
-		}
-		rustdoc_types::Type::BorrowedRef {
-			lifetime,
-			mutable,
-			type_,
-		} => {
-			if lifetime.is_some() {
-				unimplemented!();
-			}
-			write!(out, "&")?;
-			if *mutable {
-				write!(out, "mut ")?;
-			}
-			print_type(out, rustdoc_crate, type_)?;
-		}
-		_ => unimplemented!("{rustdoc_type:?}"),
-	}
 	Ok(())
 }
