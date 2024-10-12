@@ -129,34 +129,28 @@ fn json_to_rs(
 						match &item.inner {
 							rustdoc_types::ItemEnum::Function(function) => {
 								if let Some(name) = &item.name {
-									function_list.push((name, item, function));
+									function_list.push(NamedItem {
+										name,
+										item,
+										inner: function,
+									});
 								}
 							}
 							rustdoc_types::ItemEnum::Struct(doc_struct) => {
 								if let Some(name) = &item.name {
-									struct_list.push((name, item, doc_struct));
+									struct_list.push(NamedItem {
+										name,
+										item,
+										inner: doc_struct,
+									});
 								}
 							}
 							_ => {}
 						}
 					}
 
-					function_list.sort_by(|lhs, rhs| -> Ordering {
-						let name_ordering = lhs.0.cmp(rhs.0);
-						if name_ordering == Ordering::Equal {
-							lhs.1.id.0.cmp(&rhs.1.id.0)
-						} else {
-							name_ordering
-						}
-					});
-					struct_list.sort_by(|lhs, rhs| -> Ordering {
-						let name_ordering = lhs.0.cmp(rhs.0);
-						if name_ordering == Ordering::Equal {
-							lhs.1.id.0.cmp(&rhs.1.id.0)
-						} else {
-							name_ordering
-						}
-					});
+					function_list.sort();
+					struct_list.sort();
 
 					generate_structs(
 						output_dir.as_ref().join("structs.rs"),
@@ -179,18 +173,49 @@ fn json_to_rs(
 	Ok(())
 }
 
+struct NamedItem<'a, T: Eq> {
+	name: &'a String,
+	item: &'a rustdoc_types::Item,
+	inner: &'a T,
+}
+
+impl<'a, T: Eq> Ord for NamedItem<'a, T> {
+	fn cmp(&self, other: &Self) -> Ordering {
+		let name_ordering = self.name.cmp(other.name);
+		if name_ordering == Ordering::Equal {
+			self.item.id.0.cmp(&other.item.id.0)
+		} else {
+			name_ordering
+		}
+	}
+}
+
+impl<'a, T: Eq> PartialOrd for NamedItem<'a, T> {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl<'a, T: Eq> PartialEq for NamedItem<'a, T> {
+	fn eq(&self, other: &Self) -> bool {
+		(self.name, self.item, self.inner) == (other.name, other.item, self.inner)
+	}
+}
+
+impl<'a, T: Eq> Eq for NamedItem<'a, T> {}
+
 fn generate_structs(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
 	doc_crate: &rustdoc_types::Crate,
-	struct_list: &Vec<(&String, &rustdoc_types::Item, &rustdoc_types::Struct)>,
+	struct_list: &Vec<NamedItem<rustdoc_types::Struct>>,
 ) -> io::Result<()> {
 	info!("Generating structs.rs...");
-	for (name, item, doc_struct) in struct_list {
+	for item in struct_list {
 		writeln!(buf)?;
-		print_doc(buf, item)?;
-		writeln!(buf, "pub trait {name} {{")?;
-		for impl_id in &doc_struct.impls {
+		print_doc(buf, item.item)?;
+		writeln!(buf, "pub trait {} {{", item.name)?;
+		for impl_id in &item.inner.impls {
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
@@ -217,7 +242,7 @@ fn generate_structs(
 		}
 		writeln!(buf, "}}")?;
 		writeln!(buf)?;
-		writeln!(buf, "// impl {name} for std::fs::{name} {{}}")?;
+		writeln!(buf, "// impl {0} for std::fs::{0} {{}}", item.name)?;
 	}
 	let mut out_file =
 		OpenOptions::new().write(true).create(true).truncate(true).open(&output_path)?;
@@ -230,16 +255,16 @@ fn generate_functions(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
 	doc_crate: &rustdoc_types::Crate,
-	function_list: &Vec<(&String, &rustdoc_types::Item, &rustdoc_types::Function)>,
+	function_list: &Vec<NamedItem<rustdoc_types::Function>>,
 ) -> io::Result<()> {
 	info!("Generating functions.rs...");
 	writeln!(buf)?;
 	writeln!(buf, "pub trait Fs {{")?;
-	for (name, item, function) in function_list {
+	for item in function_list {
 		writeln!(buf)?;
-		print_doc(buf, item)?;
-		write!(buf, "fn {name}")?;
-		print_function_args(buf, doc_crate, function)?;
+		print_doc(buf, item.item)?;
+		write!(buf, "fn {}", item.name)?;
+		print_function_args(buf, doc_crate, item.inner)?;
 		writeln!(buf, ";")?;
 	}
 	writeln!(buf, "}}")?;
@@ -248,13 +273,13 @@ fn generate_functions(
 	writeln!(buf, "pub struct Native {{}}")?;
 	writeln!(buf)?;
 	writeln!(buf, "impl Fs for Native {{")?;
-	for (name, _, function) in function_list {
+	for item in function_list {
 		writeln!(buf)?;
-		write!(buf, "fn {name}")?;
-		print_function_args(buf, doc_crate, function)?;
+		write!(buf, "fn {}", item.name)?;
+		print_function_args(buf, doc_crate, item.inner)?;
 		writeln!(buf, " {{")?;
-		write!(buf, "	std::fs::{name}(")?;
-		for (input_name, _) in &function.decl.inputs {
+		write!(buf, "	std::fs::{}(", item.name)?;
+		for (input_name, _) in &item.inner.decl.inputs {
 			write!(buf, "{input_name}, ")?;
 		}
 		writeln!(buf, ")")?;
