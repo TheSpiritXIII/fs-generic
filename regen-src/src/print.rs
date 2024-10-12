@@ -42,11 +42,7 @@ pub fn write_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Resul
 pub fn write_resolved_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Result<()> {
 	const CRATE_PATH: &str = "crate::";
 	let name = &path.name;
-	if let Some(name) = name.strip_prefix(CRATE_PATH) {
-		write!(out, "std::{name}")?;
-	} else {
-		write!(out, "{name}")?;
-	}
+	write!(out, "{}", name.strip_prefix(CRATE_PATH).unwrap_or(name))?;
 	if let Some(args) = &path.args {
 		write_generic_args(out, root, args)?;
 	}
@@ -58,22 +54,22 @@ pub fn write_type<W: Write>(out: &mut W, root: &Crate, item_type: &Type) -> io::
 		Type::ResolvedPath(path) => {
 			write_resolved_path(out, root, path)?;
 		}
-		Type::Generic(doc_generic) => {
-			write!(out, "{doc_generic}")?;
+		Type::Generic(generic_name) => {
+			write!(out, "{generic_name}")?;
 		}
-		Type::Primitive(doc_primitive) => {
-			write!(out, "{doc_primitive}")?;
+		Type::Primitive(primitive_name) => {
+			write!(out, "{primitive_name}")?;
 		}
-		Type::Tuple(doc_tuple) => {
+		Type::Tuple(tuple_list) => {
 			write!(out, "(")?;
-			for doc_tuple in doc_tuple {
+			for doc_tuple in tuple_list {
 				write_type(out, root, doc_tuple)?;
 			}
 			write!(out, ")")?;
 		}
-		Type::Slice(doc_slice) => {
+		Type::Slice(slice_type) => {
 			write!(out, "[")?;
-			write_type(out, root, doc_slice)?;
+			write_type(out, root, slice_type)?;
 			write!(out, "]")?;
 		}
 		Type::BorrowedRef {
@@ -81,10 +77,10 @@ pub fn write_type<W: Write>(out: &mut W, root: &Crate, item_type: &Type) -> io::
 			mutable,
 			type_,
 		} => {
-			if lifetime.is_some() {
-				unimplemented!();
-			}
 			write!(out, "&")?;
+			if let Some(lifetime_name) = lifetime {
+				write!(out, "`{lifetime_name} ")?;
+			}
 			if *mutable {
 				write!(out, "mut ")?;
 			}
@@ -109,10 +105,18 @@ pub fn write_generic_args<W: Write>(
 			write!(out, "<")?;
 			for arg in args {
 				match arg {
+					GenericArg::Lifetime(lifetime_name) => {
+						write!(out, "`{lifetime_name}")?;
+					}
 					GenericArg::Type(generic_type) => {
 						write_type(out, root, generic_type)?;
 					}
-					_ => unimplemented!(),
+					GenericArg::Infer => {
+						write!(out, "_")?;
+					}
+					GenericArg::Const(_) => {
+						unimplemented!();
+					}
 				}
 				write!(out, ",")?;
 			}
@@ -160,7 +164,7 @@ pub fn write_function_args<W: Write>(
 								}
 								write!(out, " + ")?;
 							}
-							_ => todo!(),
+							_ => unimplemented!(),
 						}
 					}
 					if *synthetic || default.is_some() {
@@ -169,7 +173,6 @@ pub fn write_function_args<W: Write>(
 				}
 				_ => unimplemented!(),
 			}
-			// rustdoc_pretty_type(out, &doc_crate, &generic_param.kind)?;
 			write!(out, ", ")?;
 		}
 		write!(out, ">")?;
