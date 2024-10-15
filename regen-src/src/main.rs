@@ -296,6 +296,7 @@ fn generate_functions(
 use std::fs::Metadata;
 use std::fs::ReadDir;
 use std::fs::Permissions;
+use std::path;
 "
 	)?;
 	out_file.write_all(buf)?;
