@@ -263,6 +263,10 @@ fn generate_functions(
 	writeln!(buf)?;
 	writeln!(buf, "pub trait Fs {{")?;
 	for item in function_list {
+		if item.item.deprecation.is_some() {
+			continue;
+		}
+
 		writeln!(buf)?;
 		print::write_doc(buf, item.item)?;
 		print::write_function(buf, doc_crate, item.name, item.inner)?;
@@ -275,6 +279,10 @@ fn generate_functions(
 	writeln!(buf)?;
 	writeln!(buf, "impl Fs for Native {{")?;
 	for item in function_list {
+		if item.item.deprecation.is_some() {
+			continue;
+		}
+
 		writeln!(buf)?;
 		print::write_function(buf, doc_crate, item.name, item.inner)?;
 		writeln!(buf, " {{")?;

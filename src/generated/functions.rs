@@ -652,33 +652,6 @@ pub trait Fs {
 	/// ```
 	fn set_permissions<P: AsRef<path::Path>>(path: P, perm: Permissions) -> io::Result<()>;
 
-	/// Creates a new symbolic link on the filesystem.
-	///
-	/// The `link` path will be a symbolic link pointing to the `original` path.
-	/// On Windows, this will be a file symlink, not a directory symlink;
-	/// for this reason, the platform-specific [`std::os::unix::fs::symlink`]
-	/// and [`std::os::windows::fs::symlink_file`] or [`symlink_dir`] should be
-	/// used instead to make the intent explicit.
-	///
-	/// [`std::os::unix::fs::symlink`]: crate::os::unix::fs::symlink
-	/// [`std::os::windows::fs::symlink_file`]: crate::os::windows::fs::symlink_file
-	/// [`symlink_dir`]: crate::os::windows::fs::symlink_dir
-	///
-	/// # Examples
-	///
-	/// ```no_run
-	/// use std::fs;
-	///
-	/// fn main() -> std::io::Result<()> {
-	/// 	fs::soft_link("a.txt", "b.txt")?;
-	/// 	Ok(())
-	/// }
-	/// ```
-	fn soft_link<P: AsRef<path::Path>, Q: AsRef<path::Path>>(
-		original: P,
-		link: Q,
-	) -> io::Result<()>;
-
 	/// Queries the metadata about a file without following symlinks.
 	///
 	/// # Platform-specific behavior
@@ -805,13 +778,6 @@ impl Fs for Native {
 
 	fn set_permissions<P: AsRef<path::Path>>(path: P, perm: Permissions) -> io::Result<()> {
 		std::fs::set_permissions(path, perm)
-	}
-
-	fn soft_link<P: AsRef<path::Path>, Q: AsRef<path::Path>>(
-		original: P,
-		link: Q,
-	) -> io::Result<()> {
-		std::fs::soft_link(original, link)
 	}
 
 	fn symlink_metadata<P: AsRef<path::Path>>(path: P) -> io::Result<Metadata> {
