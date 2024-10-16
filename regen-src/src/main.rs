@@ -1,8 +1,8 @@
 #![warn(clippy::pedantic)]
 mod print;
+mod rustdoc_util;
 
 use std::any::Any;
-use std::cmp::Ordering;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::BufRead;
@@ -96,19 +96,7 @@ pub enum SourceError {
 	#[error("unable to write source")]
 	Io(#[from] io::Error),
 	#[error("parse error: {0}")]
-	ParseError(&'static str),
-}
-
-fn doc_root_module(
-	doc_crate: &rustdoc_types::Crate,
-) -> Result<&rustdoc_types::Module, &'static str> {
-	let Some(root_module) = doc_crate.index.get(&doc_crate.root) else {
-		return Err("could not find root item in index");
-	};
-	match &root_module.inner {
-		rustdoc_types::ItemEnum::Module(doc_module) => Ok(doc_module),
-		_ => Err("expected root to be a module"),
-	}
+	ParseError(rustdoc_util::ItemError),
 }
 
 fn json_to_rs(
@@ -116,8 +104,8 @@ fn json_to_rs(
 	output_dir: impl AsRef<Path>,
 ) -> Result<(), SourceError> {
 	let mut buf = Vec::new();
-	let doc_module = doc_root_module(doc_crate).map_err(SourceError::ParseError)?;
-	for id in &doc_module.items {
+	let item = rustdoc_util::root_module(doc_crate).map_err(SourceError::ParseError)?;
+	for id in &item.inner.items {
 		if let Some(item) = doc_crate.index.get(id) {
 			if let rustdoc_types::ItemEnum::Module(item_module) = &item.inner {
 				if item.name.as_ref().is_some_and(|name| name == "fs") {
@@ -131,18 +119,18 @@ fn json_to_rs(
 						match &item.inner {
 							rustdoc_types::ItemEnum::Function(function) => {
 								if let Some(name) = &item.name {
-									function_list.push(NamedItem {
+									function_list.push(rustdoc_util::NamedItem {
 										name,
-										item,
+										base: item,
 										inner: function,
 									});
 								}
 							}
 							rustdoc_types::ItemEnum::Struct(doc_struct) => {
 								if let Some(name) = &item.name {
-									struct_list.push(NamedItem {
+									struct_list.push(rustdoc_util::NamedItem {
 										name,
-										item,
+										base: item,
 										inner: doc_struct,
 									});
 								}
@@ -175,47 +163,16 @@ fn json_to_rs(
 	Ok(())
 }
 
-struct NamedItem<'a, T: Eq> {
-	name: &'a String,
-	item: &'a rustdoc_types::Item,
-	inner: &'a T,
-}
-
-impl<'a, T: Eq> Ord for NamedItem<'a, T> {
-	fn cmp(&self, other: &Self) -> Ordering {
-		let name_ordering = self.name.cmp(other.name);
-		if name_ordering == Ordering::Equal {
-			self.item.id.0.cmp(&other.item.id.0)
-		} else {
-			name_ordering
-		}
-	}
-}
-
-impl<'a, T: Eq> PartialOrd for NamedItem<'a, T> {
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		Some(self.cmp(other))
-	}
-}
-
-impl<'a, T: Eq> PartialEq for NamedItem<'a, T> {
-	fn eq(&self, other: &Self) -> bool {
-		(self.name, self.item, self.inner) == (other.name, other.item, self.inner)
-	}
-}
-
-impl<'a, T: Eq> Eq for NamedItem<'a, T> {}
-
 fn generate_structs(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
 	doc_crate: &rustdoc_types::Crate,
-	struct_list: &Vec<NamedItem<rustdoc_types::Struct>>,
+	struct_list: &Vec<rustdoc_util::NamedItem<rustdoc_types::Struct>>,
 ) -> io::Result<()> {
 	info!("Generating structs.rs...");
 	for item in struct_list {
 		writeln!(buf)?;
-		print::write_doc(buf, item.item)?;
+		print::write_doc(buf, item.base)?;
 		writeln!(buf, "pub trait {} {{", item.name)?;
 		for impl_id in &item.inner.impls {
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
@@ -257,18 +214,18 @@ fn generate_functions(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
 	doc_crate: &rustdoc_types::Crate,
-	function_list: &Vec<NamedItem<rustdoc_types::Function>>,
+	function_list: &Vec<rustdoc_util::NamedItem<rustdoc_types::Function>>,
 ) -> io::Result<()> {
 	info!("Generating functions.rs...");
 	writeln!(buf)?;
 	writeln!(buf, "pub trait Fs {{")?;
 	for item in function_list {
-		if item.item.deprecation.is_some() {
+		if item.base.deprecation.is_some() {
 			continue;
 		}
 
 		writeln!(buf)?;
-		print::write_doc(buf, item.item)?;
+		print::write_doc(buf, item.base)?;
 		print::write_function(buf, doc_crate, item.name, item.inner)?;
 		writeln!(buf, ";")?;
 	}
@@ -279,7 +236,7 @@ fn generate_functions(
 	writeln!(buf)?;
 	writeln!(buf, "impl Fs for Native {{")?;
 	for item in function_list {
-		if item.item.deprecation.is_some() {
+		if item.base.deprecation.is_some() {
 			continue;
 		}
 
