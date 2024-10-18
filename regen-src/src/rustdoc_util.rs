@@ -1,5 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Debug;
+use std::hash::Hash;
 
 use rustdoc_types::Crate;
 use rustdoc_types::Id;
@@ -7,14 +9,20 @@ use rustdoc_types::Item;
 use rustdoc_types::ItemEnum;
 use rustdoc_types::ItemKind;
 use rustdoc_types::Module;
+use serde::Deserialize;
+use serde::Serialize;
 
-pub struct NamedItem<'a, T: Eq> {
+#[derive(Clone, Debug)]
+pub struct NamedItem<'a, T: Clone + Debug + PartialEq + Eq + Hash + Serialize + Deserialize<'a>> {
 	pub name: &'a String,
 	pub base: &'a Item,
 	pub inner: &'a T,
 }
 
-impl<'a, T: Eq> Ord for NamedItem<'a, T> {
+impl<'a, T> Ord for NamedItem<'a, T>
+where
+	T: Clone + Debug + PartialEq + Eq + Hash + Serialize + Deserialize<'a>,
+{
 	fn cmp(&self, other: &Self) -> Ordering {
 		let name_ordering = self.name.cmp(other.name);
 		if name_ordering == Ordering::Equal {
@@ -25,19 +33,28 @@ impl<'a, T: Eq> Ord for NamedItem<'a, T> {
 	}
 }
 
-impl<'a, T: Eq> PartialOrd for NamedItem<'a, T> {
+impl<'a, T> PartialOrd for NamedItem<'a, T>
+where
+	T: Clone + Debug + PartialEq + Eq + Hash + Serialize + Deserialize<'a>,
+{
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		Some(self.cmp(other))
 	}
 }
 
-impl<'a, T: Eq> PartialEq for NamedItem<'a, T> {
+impl<'a, T> PartialEq for NamedItem<'a, T>
+where
+	T: Clone + Debug + PartialEq + Eq + Hash + Serialize + Deserialize<'a>,
+{
 	fn eq(&self, other: &Self) -> bool {
 		(self.name, self.base, self.inner) == (other.name, other.base, self.inner)
 	}
 }
 
-impl<'a, T: Eq> Eq for NamedItem<'a, T> {}
+impl<'a, T> Eq for NamedItem<'a, T> where
+	T: Clone + Debug + PartialEq + Eq + Hash + Serialize + Deserialize<'a>
+{
+}
 
 #[derive(Debug)]
 pub enum ItemErrorKind {
