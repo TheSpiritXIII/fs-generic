@@ -182,8 +182,6 @@ pub trait File {
 	// impl std::io::Seek
 	// impl IsTerminal
 	// impl std::os::wasi::fs::FileExt
-	// impl core::convert::From<OwnedHandle,>
-	// impl core::convert::From<OwnedFd,>
 	// impl core::convert::From<File,>
 }
 

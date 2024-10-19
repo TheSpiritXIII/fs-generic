@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 mod print;
 mod rustdoc_util;
+mod visit;
 
 use std::any::Any;
 use std::fs;
@@ -180,19 +181,16 @@ fn generate_structs(
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
-						if has_module_with_name(path_resolver, &impl_trait.id, "windows") {
-							continue;
-						}
-						if has_module_with_name(path_resolver, &impl_trait.id, "unix") {
-							continue;
-						}
-						if let Type::ResolvedPath(path) = &doc_impl.for_ {
-							if has_module_with_name(path_resolver, &path.id, "windows") {
-								continue;
+						if !visit::visit_item(impl_item, &|id| {
+							if has_module_with_name(path_resolver, &id, "windows") {
+								return false;
 							}
-							if has_module_with_name(path_resolver, &path.id, "unix") {
-								continue;
+							if has_module_with_name(path_resolver, &id, "unix") {
+								return false;
 							}
+							return true;
+						}) {
+							continue;
 						}
 						write!(buf, "// impl ")?;
 						print::write_path(buf, doc_crate, impl_trait)?;
