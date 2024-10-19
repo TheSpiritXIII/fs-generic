@@ -22,7 +22,6 @@ pub trait DirBuilder {
 	// impl core::convert::TryFrom<U,>
 	// impl core::any::Any
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::DirBuilderExt
 }
 
 // impl DirBuilder for std::fs::DirBuilder {}
@@ -61,8 +60,6 @@ pub trait DirEntry {
 	// impl core::convert::TryFrom<U,>
 	// impl core::any::Any
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::DirEntryExt
-	// impl std::os::unix::fs::DirEntryExt2
 	// impl std::os::wasi::fs::DirEntryExt
 }
 
@@ -184,9 +181,7 @@ pub trait File {
 	// impl std::io::Write
 	// impl std::io::Seek
 	// impl IsTerminal
-	// impl std::os::unix::fs::FileExt
 	// impl std::os::wasi::fs::FileExt
-	// impl std::os::windows::fs::FileExt
 	// impl AsHandle
 	// impl core::convert::From<File,>
 	// impl core::convert::From<OwnedHandle,>
@@ -228,7 +223,6 @@ pub trait FileTimes {
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
 	// impl core::default::Default
-	// impl std::os::windows::fs::FileTimesExt
 }
 
 // impl FileTimes for std::fs::FileTimes {}
@@ -261,9 +255,7 @@ pub trait FileType {
 	// impl core::cmp::Eq
 	// impl core::hash::Hash
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::FileTypeExt
 	// impl std::os::wasi::fs::FileTypeExt
-	// impl std::os::windows::fs::FileTypeExt
 }
 
 // impl FileType for std::fs::FileType {}
@@ -301,10 +293,8 @@ pub trait Metadata {
 	// impl alloc::borrow::ToOwned
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::MetadataExt
 	// impl std::os::linux::fs::MetadataExt
 	// impl std::os::wasi::fs::MetadataExt
-	// impl std::os::windows::fs::MetadataExt
 }
 
 // impl Metadata for std::fs::Metadata {}
@@ -366,9 +356,7 @@ pub trait OpenOptions {
 	// impl alloc::borrow::ToOwned
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::OpenOptionsExt
 	// impl std::os::wasi::fs::OpenOptionsExt
-	// impl std::os::windows::fs::OpenOptionsExt
 }
 
 // impl OpenOptions for std::fs::OpenOptions {}
@@ -404,7 +392,6 @@ pub trait Permissions {
 	// impl core::cmp::PartialEq
 	// impl core::cmp::Eq
 	// impl core::fmt::Debug
-	// impl std::os::unix::fs::PermissionsExt
 }
 
 // impl Permissions for std::fs::Permissions {}

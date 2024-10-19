@@ -17,6 +17,7 @@ use std::process::Stdio;
 use std::thread;
 
 use log::info;
+use rustdoc_types::Id;
 use rustdoc_types::ItemEnum;
 use thiserror::Error;
 
@@ -99,21 +100,20 @@ pub enum SourceError {
 	ParseError(rustdoc_util::ItemError),
 }
 
-fn json_to_rs(
-	doc_crate: &rustdoc_types::Crate,
-	output_dir: impl AsRef<Path>,
-) -> Result<(), SourceError> {
+fn json_to_rs(doc: &rustdoc_types::Crate, output_dir: impl AsRef<Path>) -> Result<(), SourceError> {
 	let mut buf = Vec::new();
-	let item = rustdoc_util::root_module(doc_crate).map_err(SourceError::ParseError)?;
-	for id in &item.inner.items {
-		if let Some(item) = doc_crate.index.get(id) {
+
+	let path_resolver = rustdoc_util::PathResolver::from(doc).map_err(SourceError::ParseError)?;
+	let root_module = path_resolver.root();
+	for id in &root_module.inner.items {
+		if let Some(item) = doc.index.get(id) {
 			if let rustdoc_types::ItemEnum::Module(item_module) = &item.inner {
 				if item.name.as_ref().is_some_and(|name| name == "fs") {
 					let mut function_list = Vec::new();
 					let mut struct_list = Vec::new();
 
 					for id in &item_module.items {
-						let Some(item) = doc_crate.index.get(id) else {
+						let Some(item) = doc.index.get(id) else {
 							continue;
 						};
 						match &item.inner {
@@ -145,7 +145,7 @@ fn json_to_rs(
 					generate_structs(
 						output_dir.as_ref().join("structs.rs"),
 						&mut buf,
-						doc_crate,
+						&path_resolver,
 						&struct_list,
 					)?;
 					buf.clear();
@@ -153,7 +153,7 @@ fn json_to_rs(
 					generate_functions(
 						output_dir.as_ref().join("functions.rs"),
 						&mut buf,
-						doc_crate,
+						doc,
 						&function_list,
 					)?;
 				}
@@ -166,10 +166,11 @@ fn json_to_rs(
 fn generate_structs(
 	output_path: impl AsRef<Path>,
 	buf: &mut Vec<u8>,
-	doc_crate: &rustdoc_types::Crate,
+	path_resolver: &rustdoc_util::PathResolver,
 	struct_list: &Vec<rustdoc_util::NamedItem<rustdoc_types::Struct>>,
 ) -> io::Result<()> {
 	info!("Generating structs.rs...");
+	let doc_crate = path_resolver.doc();
 	for item in struct_list {
 		writeln!(buf)?;
 		print::write_doc(buf, item.base)?;
@@ -178,6 +179,12 @@ fn generate_structs(
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
+						if has_module_with_name(path_resolver, &impl_trait.id, "windows") {
+							continue;
+						}
+						if has_module_with_name(path_resolver, &impl_trait.id, "unix") {
+							continue;
+						}
 						write!(buf, "// impl ")?;
 						print::write_path(buf, doc_crate, impl_trait)?;
 						writeln!(buf)?;
@@ -266,4 +273,23 @@ use std::path;
 	)?;
 	out_file.write_all(buf)?;
 	Ok(())
+}
+
+// Hacky but works for now. Would like to check full path instead.
+fn has_module_with_name(path_resolver: &rustdoc_util::PathResolver, id: &Id, name: &str) -> bool {
+	info!("Checking: {}", id.0);
+	let mut id = id;
+	while let Some(parent) = path_resolver.parent(id) {
+		id = parent;
+		info!("Parent: {}", id.0);
+		if let Some(item) = path_resolver.doc().index.get(id) {
+			if let Some(item_name) = &item.name {
+				info!("Module: {item_name}");
+				if item_name == name {
+					return true;
+				}
+			}
+		}
+	}
+	false
 }

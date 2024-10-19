@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -108,5 +109,52 @@ pub fn root_module(root: &Crate) -> Result<NamedItem<Module>, ItemError> {
 				kind: ItemErrorKind::ExpectedType(ItemKind::Module),
 			})
 		}
+	}
+}
+
+pub struct PathResolver<'a> {
+	doc: &'a Crate,
+	root_module: NamedItem<'a, Module>,
+	child_parent_map: HashMap<&'a Id, &'a Id>,
+}
+
+impl<'a> PathResolver<'a> {
+	pub fn from(doc: &'a Crate) -> Result<Self, ItemError> {
+		let root_module = root_module(doc)?;
+
+		let mut child_parent_map = HashMap::new();
+		let mut queue = vec![(&root_module.base.id, root_module.inner)];
+		while let Some((module_id, module)) = queue.pop() {
+			for child_id in &module.items {
+				child_parent_map.insert(child_id, module_id);
+				let Some(child_item) = doc.index.get(child_id) else {
+					return Err(ItemError {
+						id: child_id.clone(),
+						kind: ItemErrorKind::MissingItem,
+					});
+				};
+				if let ItemEnum::Module(child_module) = &child_item.inner {
+					child_parent_map.insert(child_id, module_id);
+					queue.push((&child_id, child_module));
+				}
+			}
+		}
+		Ok(Self {
+			doc,
+			root_module,
+			child_parent_map: child_parent_map,
+		})
+	}
+
+	pub fn parent(&self, module_id: &Id) -> Option<&Id> {
+		self.child_parent_map.get(module_id).map(|v| &**v)
+	}
+
+	pub fn root(&self) -> &NamedItem<'a, Module> {
+		&self.root_module
+	}
+
+	pub fn doc(&self) -> &Crate {
+		&self.doc
 	}
 }
