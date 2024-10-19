@@ -133,16 +133,35 @@ impl<'a> PathResolver<'a> {
 						kind: ItemErrorKind::MissingItem,
 					});
 				};
-				if let ItemEnum::Module(child_module) = &child_item.inner {
-					child_parent_map.insert(child_id, module_id);
-					queue.push((&child_id, child_module));
+				let mut child_item = child_item;
+				loop {
+					match &child_item.inner {
+						ItemEnum::Module(child_module) => {
+							child_parent_map.insert(child_id, module_id);
+							queue.push((child_id, child_module));
+						}
+						ItemEnum::Import {
+							id: Some(import_id),
+							..
+						} => {
+							child_parent_map.insert(import_id, module_id);
+
+							// Built-in types will not be found.
+							if let Some(import_item) = doc.index.get(import_id) {
+								child_item = import_item;
+								continue;
+							}
+						}
+						_ => {}
+					}
+					break;
 				}
 			}
 		}
 		Ok(Self {
 			doc,
 			root_module,
-			child_parent_map: child_parent_map,
+			child_parent_map,
 		})
 	}
 
@@ -155,6 +174,6 @@ impl<'a> PathResolver<'a> {
 	}
 
 	pub fn doc(&self) -> &Crate {
-		&self.doc
+		self.doc
 	}
 }

@@ -182,17 +182,7 @@ pub trait File {
 	// impl std::io::Seek
 	// impl IsTerminal
 	// impl std::os::wasi::fs::FileExt
-	// impl AsHandle
-	// impl core::convert::From<File,>
 	// impl core::convert::From<OwnedHandle,>
-	// impl AsRawHandle
-	// impl FromRawHandle
-	// impl IntoRawHandle
-	// impl AsRawFd
-	// impl FromRawFd
-	// impl IntoRawFd
-	// impl AsFd
-	// impl core::convert::From<File,>
 	// impl core::convert::From<OwnedFd,>
 	// impl core::convert::From<File,>
 }

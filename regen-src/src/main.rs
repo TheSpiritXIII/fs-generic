@@ -19,6 +19,7 @@ use std::thread;
 use log::info;
 use rustdoc_types::Id;
 use rustdoc_types::ItemEnum;
+use rustdoc_types::Type;
 use thiserror::Error;
 
 const HEADER: &str = include_str!("../data/header.rs");
@@ -185,6 +186,14 @@ fn generate_structs(
 						if has_module_with_name(path_resolver, &impl_trait.id, "unix") {
 							continue;
 						}
+						if let Type::ResolvedPath(path) = &doc_impl.for_ {
+							if has_module_with_name(path_resolver, &path.id, "windows") {
+								continue;
+							}
+							if has_module_with_name(path_resolver, &path.id, "unix") {
+								continue;
+							}
+						}
 						write!(buf, "// impl ")?;
 						print::write_path(buf, doc_crate, impl_trait)?;
 						writeln!(buf)?;
@@ -277,14 +286,11 @@ use std::path;
 
 // Hacky but works for now. Would like to check full path instead.
 fn has_module_with_name(path_resolver: &rustdoc_util::PathResolver, id: &Id, name: &str) -> bool {
-	info!("Checking: {}", id.0);
 	let mut id = id;
 	while let Some(parent) = path_resolver.parent(id) {
 		id = parent;
-		info!("Parent: {}", id.0);
 		if let Some(item) = path_resolver.doc().index.get(id) {
 			if let Some(item_name) = &item.name {
-				info!("Module: {item_name}");
 				if item_name == name {
 					return true;
 				}
