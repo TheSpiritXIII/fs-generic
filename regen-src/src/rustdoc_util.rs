@@ -177,3 +177,15 @@ impl<'a> PathResolver<'a> {
 		self.doc
 	}
 }
+
+pub fn find_item<'a>(doc: &'a Crate, name: &[&str]) -> Option<&'a Id> {
+	if name.is_empty() {
+		return None;
+	}
+	for (id, item_summary) in &doc.paths {
+		if item_summary.path == name {
+			return Some(id);
+		}
+	}
+	None
+}

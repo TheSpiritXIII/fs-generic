@@ -172,6 +172,16 @@ fn generate_structs(
 ) -> io::Result<()> {
 	info!("Generating structs.rs...");
 	let doc_crate = path_resolver.doc();
+	let deny = rustdoc_util::find_item(
+		doc_crate,
+		&[
+			"core",
+			"marker",
+			"StructuralPartialEq",
+		],
+	)
+	.unwrap();
+
 	for item in struct_list {
 		writeln!(buf)?;
 		print::write_doc(buf, item.base)?;
@@ -180,6 +190,13 @@ fn generate_structs(
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
+						if &impl_trait.id == deny {
+							continue;
+						}
+						if doc_impl.blanket_impl.is_some() || doc_impl.synthetic {
+							continue;
+						}
+
 						if !visitor::visit_item(impl_item, &|id| {
 							if has_module_with_name(path_resolver, id, "windows") {
 								return false;
@@ -189,10 +206,6 @@ fn generate_structs(
 							}
 							true
 						}) {
-							continue;
-						}
-
-						if doc_impl.blanket_impl.is_some() || doc_impl.synthetic {
 							continue;
 						}
 

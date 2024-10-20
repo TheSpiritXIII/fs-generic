@@ -169,7 +169,6 @@ pub trait FileType {
 	// fn is_symlink(self: &Self, ) -> bool;
 	// impl core::marker::Copy
 	// impl core::clone::Clone
-	// impl core::marker::StructuralPartialEq
 	// impl core::cmp::PartialEq
 	// impl core::cmp::Eq
 	// impl core::hash::Hash
@@ -262,7 +261,6 @@ pub trait Permissions {
 	// fn readonly(self: &Self, ) -> bool;
 	// fn set_readonly(self: &mut Self, readonly: bool, );
 	// impl core::clone::Clone
-	// impl core::marker::StructuralPartialEq
 	// impl core::cmp::PartialEq
 	// impl core::cmp::Eq
 	// impl core::fmt::Debug
