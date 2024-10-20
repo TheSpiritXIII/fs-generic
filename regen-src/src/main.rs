@@ -191,6 +191,11 @@ fn generate_structs(
 						}) {
 							continue;
 						}
+
+						if doc_impl.blanket_impl.is_some() || doc_impl.synthetic {
+							continue;
+						}
+
 						write!(buf, "// impl ")?;
 						print::write_path(buf, doc_crate, impl_trait)?;
 						writeln!(buf)?;

@@ -8,19 +8,6 @@ pub trait DirBuilder {
 	// fn new() -> DirBuilder;
 	// fn recursive(self: &mut Self, recursive: bool, ) -> &mut Self;
 	// fn create<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<(),>;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
 	// impl core::fmt::Debug
 }
 
@@ -46,19 +33,6 @@ pub trait DirEntry {
 	// fn metadata(self: &Self, ) -> io::Result<Metadata,>;
 	// fn file_type(self: &Self, ) -> io::Result<FileType,>;
 	// fn file_name(self: &Self, ) -> OsString;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
 	// impl core::fmt::Debug
 	// impl std::os::wasi::fs::DirEntryExt
 }
@@ -160,19 +134,6 @@ pub trait File {
 	// fn set_permissions(self: &Self, perm: Permissions, ) -> io::Result<(),>;
 	// fn set_times(self: &Self, times: FileTimes, ) -> io::Result<(),>;
 	// fn set_modified(self: &Self, time: SystemTime, ) -> io::Result<(),>;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
 	// impl core::fmt::Debug
 	// impl std::io::Read
 	// impl std::io::Write
@@ -192,21 +153,6 @@ pub trait FileTimes {
 	// fn new() -> Self;
 	// fn set_accessed(self: Self, t: SystemTime, ) -> Self;
 	// fn set_modified(self: Self, t: SystemTime, ) -> Self;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::clone::CloneToUninit
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl alloc::borrow::ToOwned
 	// impl core::marker::Copy
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
@@ -221,21 +167,6 @@ pub trait FileType {
 	// fn is_dir(self: &Self, ) -> bool;
 	// fn is_file(self: &Self, ) -> bool;
 	// fn is_symlink(self: &Self, ) -> bool;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::clone::CloneToUninit
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl alloc::borrow::ToOwned
 	// impl core::marker::Copy
 	// impl core::clone::Clone
 	// impl core::marker::StructuralPartialEq
@@ -264,21 +195,6 @@ pub trait Metadata {
 	// fn modified(self: &Self, ) -> io::Result<SystemTime,>;
 	// fn accessed(self: &Self, ) -> io::Result<SystemTime,>;
 	// fn created(self: &Self, ) -> io::Result<SystemTime,>;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::clone::CloneToUninit
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl alloc::borrow::ToOwned
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
 	// impl std::os::linux::fs::MetadataExt
@@ -327,21 +243,6 @@ pub trait OpenOptions {
 	// fn create(self: &mut Self, create: bool, ) -> &mut Self;
 	// fn create_new(self: &mut Self, create_new: bool, ) -> &mut Self;
 	// fn open<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<File,>;
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::clone::CloneToUninit
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl alloc::borrow::ToOwned
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
 	// impl std::os::wasi::fs::OpenOptionsExt
@@ -360,21 +261,6 @@ pub trait OpenOptions {
 pub trait Permissions {
 	// fn readonly(self: &Self, ) -> bool;
 	// fn set_readonly(self: &mut Self, readonly: bool, );
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::clone::CloneToUninit
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl alloc::borrow::ToOwned
 	// impl core::clone::Clone
 	// impl core::marker::StructuralPartialEq
 	// impl core::cmp::PartialEq
@@ -399,20 +285,6 @@ pub trait Permissions {
 /// This [`io::Result`] will be an [`Err`] if there's some sort of intermittent
 /// IO error during iteration.
 pub trait ReadDir {
-	// impl core::marker::Send
-	// impl core::marker::Sync
-	// impl core::marker::Freeze
-	// impl core::marker::Unpin
-	// impl core::panic::unwind_safe::UnwindSafe
-	// impl core::panic::unwind_safe::RefUnwindSafe
-	// impl core::borrow::Borrow<T,>
-	// impl core::borrow::BorrowMut<T,>
-	// impl core::convert::Into<U,>
-	// impl core::convert::From<T,>
-	// impl core::convert::TryInto<U,>
-	// impl core::convert::TryFrom<U,>
-	// impl core::any::Any
-	// impl core::iter::traits::collect::IntoIterator
 	// impl core::fmt::Debug
 	// impl core::iter::traits::iterator::Iterator
 }
