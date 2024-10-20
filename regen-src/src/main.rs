@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 mod print;
 mod rustdoc_util;
-mod visit;
+mod visitor;
 
 use std::any::Any;
 use std::fs;
@@ -20,7 +20,6 @@ use std::thread;
 use log::info;
 use rustdoc_types::Id;
 use rustdoc_types::ItemEnum;
-use rustdoc_types::Type;
 use thiserror::Error;
 
 const HEADER: &str = include_str!("../data/header.rs");
@@ -181,14 +180,14 @@ fn generate_structs(
 			if let Some(impl_item) = doc_crate.index.get(impl_id) {
 				if let ItemEnum::Impl(doc_impl) = &impl_item.inner {
 					if let Some(impl_trait) = &doc_impl.trait_ {
-						if !visit::visit_item(impl_item, &|id| {
-							if has_module_with_name(path_resolver, &id, "windows") {
+						if !visitor::visit_item(impl_item, &|id| {
+							if has_module_with_name(path_resolver, id, "windows") {
 								return false;
 							}
-							if has_module_with_name(path_resolver, &id, "unix") {
+							if has_module_with_name(path_resolver, id, "unix") {
 								return false;
 							}
-							return true;
+							true
 						}) {
 							continue;
 						}

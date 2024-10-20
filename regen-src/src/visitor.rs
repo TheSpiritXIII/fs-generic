@@ -15,19 +15,38 @@ where
 		return false;
 	}
 	match &item.inner {
-		ItemEnum::Module(module) => unimplemented!(),
+		ItemEnum::Module(module) => {
+			for id in &module.items {
+				if !visitor(id) {
+					return false;
+				}
+			}
+		}
 		ItemEnum::ExternCrate {
 			..
-		} => return true,
+		}
+		| ItemEnum::Macro(_) => return true,
 		ItemEnum::Use(_) => unimplemented!(),
-		ItemEnum::Union(union) => unimplemented!(),
+		ItemEnum::Union(union) => {
+			for id in &union.fields {
+				if !visitor(id) {
+					return false;
+				}
+			}
+			for id in &union.impls {
+				if !visitor(id) {
+					return false;
+				}
+			}
+			unimplemented!();
+		}
 		ItemEnum::Struct(_) => unimplemented!(),
 		ItemEnum::StructField(_) => unimplemented!(),
 		ItemEnum::Enum(_) => unimplemented!(),
-		ItemEnum::Variant(variant) => unimplemented!(),
-		ItemEnum::Function(function) => unimplemented!(),
+		ItemEnum::Variant(_) => unimplemented!(),
+		ItemEnum::Function(_) => unimplemented!(),
 		ItemEnum::Trait(_) => unimplemented!(),
-		ItemEnum::TraitAlias(trait_alias) => unimplemented!(),
+		ItemEnum::TraitAlias(_) => unimplemented!(),
 		ItemEnum::Impl(impl_item) => {
 			if !visit_type(&impl_item.for_, visitor) {
 				return false;
@@ -38,7 +57,7 @@ where
 				}
 			}
 			if let Some(path) = &impl_item.trait_ {
-				if !visit_path(&path, visitor) {
+				if !visit_path(path, visitor) {
 					return false;
 				}
 			}
@@ -49,33 +68,34 @@ where
 			}
 			return visit_generic_params(&impl_item.generics.params, visitor);
 		}
-		ItemEnum::TypeAlias(type_alias) => unimplemented!(),
+		ItemEnum::TypeAlias(_) => unimplemented!(),
 		ItemEnum::Constant {
+			type_,
+			..
+		}
+		| ItemEnum::AssocConst {
 			type_,
 			..
 		} => return visit_type(type_, visitor),
 		ItemEnum::Static(_) => unimplemented!(),
 		ItemEnum::ExternType => unimplemented!(),
-		ItemEnum::Macro(_) => return true,
-		ItemEnum::ProcMacro(proc_macro) => unimplemented!(),
-		ItemEnum::Primitive(primitive) => unimplemented!(),
-		ItemEnum::AssocConst {
-			type_,
-			..
-		} => return visit_type(type_, visitor),
+		ItemEnum::ProcMacro(_) => unimplemented!(),
+		ItemEnum::Primitive(_) => unimplemented!(),
 		ItemEnum::AssocType {
-			generics,
-			bounds,
-			type_,
+			..
 		} => unimplemented!(),
 		ItemEnum::Import {
-			source,
-			name,
 			id,
-			glob,
-		} => unimplemented!(),
+			..
+		} => {
+			if let Some(id) = id {
+				if !visitor(id) {
+					return false;
+				}
+			}
+		}
 	}
-	return true;
+	true
 }
 
 fn visit_path<T>(path: &Path, visitor: &T) -> bool
@@ -90,7 +110,7 @@ where
 			return false;
 		}
 	}
-	return true;
+	true
 }
 
 fn visit_type<T>(item_type: &Type, visitor: &T) -> bool
@@ -98,18 +118,19 @@ where
 	T: Fn(&Id) -> bool,
 {
 	match item_type {
-		Type::ResolvedPath(path) => return visit_path(path, visitor),
+		Type::ResolvedPath(path) => visit_path(path, visitor),
 		Type::DynTrait(dyn_trait) => {
 			for poly_trait in &dyn_trait.traits {
 				if !visit_path(&poly_trait.trait_, visitor) {
 					return false;
 				}
-				unimplemented!("visit generic params");
+				if !visit_generic_params(&poly_trait.generic_params, visitor) {
+					return false;
+				}
 			}
-			return true;
+			true
 		}
-		Type::Generic(_) => return true,
-		Type::Primitive(_) => return true,
+		Type::Generic(_) | Type::Primitive(_) => true,
 		Type::FunctionPointer(_) => unimplemented!("visit function pointer"),
 		Type::Tuple(vec) => {
 			for tuple_type in vec {
@@ -117,37 +138,27 @@ where
 					return false;
 				}
 			}
-			return true;
+			true
 		}
 		Type::Slice(_) => unimplemented!(),
 		Type::Array {
 			type_,
 			..
-		} => {
-			return visit_type(type_, visitor);
 		}
-		Type::Pat {
+		| Type::Pat {
 			type_,
 			..
-		} => {
-			return visit_type(type_, visitor);
 		}
-		Type::ImplTrait(vec) => {
-			return visit_generic_bounds(vec, visitor);
+		| Type::RawPointer {
+			type_,
+			..
 		}
+		| Type::BorrowedRef {
+			type_,
+			..
+		} => visit_type(type_, visitor),
+		Type::ImplTrait(vec) => visit_generic_bounds(vec, visitor),
 		Type::Infer => unimplemented!(),
-		Type::RawPointer {
-			type_,
-			..
-		} => {
-			return visit_type(type_, visitor);
-		}
-		Type::BorrowedRef {
-			type_,
-			..
-		} => {
-			return visit_type(type_, visitor);
-		}
 		Type::QualifiedPath {
 			args,
 			self_type,
@@ -162,7 +173,7 @@ where
 					return false;
 				}
 			}
-			return visit_type(self_type, visitor);
+			visit_type(self_type, visitor)
 		}
 	}
 }
@@ -178,14 +189,14 @@ where
 		} => {
 			for arg in args {
 				match arg {
-					rustdoc_types::GenericArg::Lifetime(_) => return true,
 					rustdoc_types::GenericArg::Type(arg_type) => {
 						if !visit_type(arg_type, visitor) {
 							return false;
 						}
 					}
-					rustdoc_types::GenericArg::Const(_) => return true,
-					rustdoc_types::GenericArg::Infer => return true,
+					rustdoc_types::GenericArg::Lifetime(_)
+					| rustdoc_types::GenericArg::Const(_)
+					| rustdoc_types::GenericArg::Infer => return true,
 				}
 			}
 			for binding in bindings {
@@ -227,7 +238,7 @@ where
 			}
 		}
 	}
-	return true;
+	true
 }
 
 fn visit_generic_params<T>(generic_params: &[GenericParamDef], visitor: &T) -> bool
@@ -238,7 +249,7 @@ where
 		match &generic.kind {
 			rustdoc_types::GenericParamDefKind::Lifetime {
 				..
-			} => return true,
+			} => continue,
 			rustdoc_types::GenericParamDefKind::Type {
 				bounds,
 				default,
@@ -249,17 +260,21 @@ where
 						return false;
 					}
 				}
-				return visit_generic_bounds(bounds, visitor);
+				if !visit_generic_bounds(bounds, visitor) {
+					return false;
+				}
 			}
 			rustdoc_types::GenericParamDefKind::Const {
 				type_,
 				..
 			} => {
-				return visit_type(type_, visitor);
+				if !visit_type(type_, visitor) {
+					return false;
+				}
 			}
 		}
 	}
-	return true;
+	true
 }
 
 fn visit_generic_bounds<T>(bounds: &[GenericBound], visitor: &T) -> bool
@@ -276,11 +291,14 @@ where
 				if !visitor(&trait_.id) {
 					return false;
 				}
-				return visit_generic_params(&generic_params, visitor);
+				if !visit_generic_params(generic_params, visitor) {
+					return false;
+				}
 			}
-			rustdoc_types::GenericBound::Outlives(_) => return true,
-			rustdoc_types::GenericBound::Use(_) => return true,
+			rustdoc_types::GenericBound::Outlives(_) | rustdoc_types::GenericBound::Use(_) => {
+				continue;
+			}
 		}
 	}
-	return true;
+	true
 }
