@@ -204,6 +204,12 @@ fn generate_structs(
 							if has_module_with_name(path_resolver, id, "unix") {
 								return false;
 							}
+							if has_module_with_name(path_resolver, id, "linux") {
+								return false;
+							}
+							if has_module_with_name(path_resolver, id, "wasi") {
+								return false;
+							}
 							true
 						}) {
 							continue;

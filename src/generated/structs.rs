@@ -34,7 +34,6 @@ pub trait DirEntry {
 	// fn file_type(self: &Self, ) -> io::Result<FileType,>;
 	// fn file_name(self: &Self, ) -> OsString;
 	// impl core::fmt::Debug
-	// impl std::os::wasi::fs::DirEntryExt
 }
 
 // impl DirEntry for std::fs::DirEntry {}
@@ -142,7 +141,6 @@ pub trait File {
 	// impl std::io::Write
 	// impl std::io::Seek
 	// impl IsTerminal
-	// impl std::os::wasi::fs::FileExt
 	// impl core::convert::From<File,>
 }
 
@@ -173,7 +171,6 @@ pub trait FileType {
 	// impl core::cmp::Eq
 	// impl core::hash::Hash
 	// impl core::fmt::Debug
-	// impl std::os::wasi::fs::FileTypeExt
 }
 
 // impl FileType for std::fs::FileType {}
@@ -196,8 +193,6 @@ pub trait Metadata {
 	// fn created(self: &Self, ) -> io::Result<SystemTime,>;
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
-	// impl std::os::linux::fs::MetadataExt
-	// impl std::os::wasi::fs::MetadataExt
 }
 
 // impl Metadata for std::fs::Metadata {}
@@ -244,7 +239,6 @@ pub trait OpenOptions {
 	// fn open<P: AsRef<Path,> + , >(self: &Self, path: P, ) -> io::Result<File,>;
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
-	// impl std::os::wasi::fs::OpenOptionsExt
 }
 
 // impl OpenOptions for std::fs::OpenOptions {}
