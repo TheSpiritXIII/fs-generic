@@ -30,7 +30,8 @@ fn main() -> anyhow::Result<()> {
 	let input_path = path::absolute("data/std.json")?;
 	info!("Parsing doc from {}...", input_path.display());
 	let input_data = fs::read_to_string(input_path)?;
-	let doc_crate = serde_json::from_str(&input_data)?;
+	let mut doc_crate = serde_json::from_str(&input_data)?;
+	remove_preludes(&mut doc_crate).map_err(SourceError::ParseError)?;
 
 	let output_dir = path::absolute("src/generated/")?;
 	info!("Regenerating source into {}...", output_dir.display());
@@ -91,6 +92,33 @@ fn propagate_panic<T>(handle_result: Result<T, Box<dyn Any + Send>>) -> T {
 		Ok(result) => result,
 		Err(a) => panic_any(a),
 	}
+}
+
+fn remove_preludes(doc: &mut rustdoc_types::Crate) -> Result<(), rustdoc_util::ItemError> {
+	let mut prelude_index = None;
+	{
+		let root_module = rustdoc_util::root_module(doc)?;
+		for (index, id) in root_module.inner.items.iter().enumerate() {
+			if let Some(item) = doc.index.get(id) {
+				if let Some(name) = &item.name {
+					if name == "prelude" {
+						prelude_index = Some((index, id.clone()));
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	let root_item = rustdoc_util::get_mut(doc, &doc.root.clone()).unwrap();
+	let rustdoc_types::ItemEnum::Module(root_module) = &mut root_item.inner else {
+		unreachable!("already checked type earlier");
+	};
+	if let Some((index, id)) = prelude_index {
+		root_module.items.remove(index);
+		doc.index.remove(&id);
+	}
+	Ok(())
 }
 
 #[derive(Error, Debug)]

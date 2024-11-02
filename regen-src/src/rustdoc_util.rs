@@ -70,6 +70,15 @@ pub struct ItemError {
 	kind: ItemErrorKind,
 }
 
+impl ItemError {
+	pub fn new(id: Id, kind: ItemErrorKind) -> Self {
+		Self {
+			id,
+			kind,
+		}
+	}
+}
+
 impl fmt::Display for ItemError {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match &self.kind {
@@ -82,13 +91,28 @@ impl fmt::Display for ItemError {
 	}
 }
 
-pub fn root_module(root: &Crate) -> Result<NamedItem<Module>, ItemError> {
-	let Some(root_module) = root.index.get(&root.root) else {
+pub fn get<'a>(doc: &'a Crate, id: &'a Id) -> Result<&'a Item, ItemError> {
+	let Some(item) = doc.index.get(id) else {
 		return Err(ItemError {
-			id: root.root.clone(),
+			id: doc.root.clone(),
 			kind: ItemErrorKind::MissingItem,
 		});
 	};
+	Ok(item)
+}
+
+pub fn get_mut<'a>(doc: &'a mut Crate, id: &Id) -> Result<&'a mut Item, ItemError> {
+	let Some(item) = doc.index.get_mut(id) else {
+		return Err(ItemError {
+			id: doc.root.clone(),
+			kind: ItemErrorKind::MissingItem,
+		});
+	};
+	Ok(item)
+}
+
+pub fn root_module(doc: &Crate) -> Result<NamedItem<Module>, ItemError> {
+	let root_module = get(doc, &doc.root)?;
 	match &root_module.inner {
 		ItemEnum::Module(module) => {
 			if let Some(name) = &root_module.name {
@@ -99,13 +123,13 @@ pub fn root_module(root: &Crate) -> Result<NamedItem<Module>, ItemError> {
 				});
 			}
 			Err(ItemError {
-				id: root.root.clone(),
+				id: doc.root.clone(),
 				kind: ItemErrorKind::MissingName,
 			})
 		}
 		_ => {
 			Err(ItemError {
-				id: root.root.clone(),
+				id: doc.root.clone(),
 				kind: ItemErrorKind::ExpectedType(ItemKind::Module),
 			})
 		}
