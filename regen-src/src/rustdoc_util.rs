@@ -4,6 +4,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
 
+use log::error;
 use rustdoc_types::Crate;
 use rustdoc_types::Id;
 use rustdoc_types::Item;
@@ -62,6 +63,7 @@ pub enum ItemErrorKind {
 	MissingItem,
 	MissingName,
 	ExpectedType(ItemKind),
+	MultipleExports(Id, Id),
 }
 
 #[derive(Debug)]
@@ -86,6 +88,13 @@ impl fmt::Display for ItemError {
 			ItemErrorKind::MissingName => write!(f, "missing name for item: {}", self.id.0),
 			ItemErrorKind::ExpectedType(kind) => {
 				write!(f, "expected type {:?} for item: {}", kind, self.id.0)
+			}
+			ItemErrorKind::MultipleExports(rhs, lhs) => {
+				write!(
+					f,
+					"multiple exports (example {} and {}) for item: {}",
+					rhs.0, lhs.0, self.id.0
+				)
 			}
 		}
 	}
@@ -145,7 +154,7 @@ pub struct PathResolver<'a> {
 	doc: &'a Crate,
 	root_module: NamedItem<'a, Module>,
 	child_parent_map: HashMap<&'a Id, &'a Id>,
-	child_parent_alias_map: HashMap<&'a Id, Vec<Parent<'a>>>,
+	import_map: HashMap<&'a Id, Vec<Parent<'a>>>,
 }
 
 impl<'a> PathResolver<'a> {
@@ -153,57 +162,37 @@ impl<'a> PathResolver<'a> {
 		let root_module = root_module(doc)?;
 
 		let mut child_parent_map = HashMap::new();
-		let mut child_parent_alias_map = HashMap::<&'a Id, Vec<Parent<'a>>>::new();
+		let mut import_map = HashMap::<&'a Id, Vec<Parent<'a>>>::new();
 		let mut queue = vec![(&root_module.base.id, root_module.inner)];
 		while let Some((module_id, module)) = queue.pop() {
 			for child_id in &module.items {
-				child_parent_map.insert(child_id, module_id);
-				child_parent_alias_map.entry(child_id).or_default().push(Parent {
-					id: module_id,
-					alias: None,
-				});
+				if let Some(reexport) = child_parent_map.insert(child_id, module_id) {
+					return Err(ItemError {
+						id: child_id.clone(),
+						kind: ItemErrorKind::MultipleExports(module_id.clone(), reexport.clone()),
+					});
+				}
 				let Some(child_item) = doc.index.get(child_id) else {
 					return Err(ItemError {
 						id: child_id.clone(),
 						kind: ItemErrorKind::MissingItem,
 					});
 				};
-				let mut child_item = child_item;
-				loop {
-					match &child_item.inner {
-						ItemEnum::Module(child_module) => {
-							child_parent_map.insert(child_id, module_id);
-							child_parent_alias_map.entry(child_id).or_default().push(Parent {
-								id: module_id,
-								alias: None,
-							});
-							queue.push((child_id, child_module));
-						}
-						ItemEnum::Import {
-							id: Some(import_id),
-							name,
-							glob,
-							..
-						} => {
-							let alias = if *glob {
-								None
-							} else {
-								Some(name)
-							};
-							child_parent_alias_map.entry(import_id).or_default().push(Parent {
-								id: module_id,
-								alias,
-							});
-
-							// Built-in types will not be found.
-							if let Some(import_item) = doc.index.get(import_id) {
-								child_item = import_item;
-								continue;
-							}
-						}
-						_ => {}
+				match &child_item.inner {
+					ItemEnum::Module(child_module) => {
+						queue.push((child_id, child_module));
 					}
-					break;
+					ItemEnum::Import {
+						id: Some(import_id),
+						name,
+						..
+					} => {
+						import_map.entry(import_id).or_default().push(Parent {
+							id: module_id,
+							alias: Some(name),
+						});
+					}
+					_ => {}
 				}
 			}
 		}
@@ -211,12 +200,52 @@ impl<'a> PathResolver<'a> {
 			doc,
 			root_module,
 			child_parent_map,
-			child_parent_alias_map,
+			import_map,
 		})
 	}
 
-	pub fn parent(&self, module_id: &Id) -> Option<&Id> {
-		self.child_parent_map.get(module_id).copied()
+	pub fn canonical_parent(&self, module_id: &Id) -> Option<&Id> {
+		self.child_parent_map.get(module_id).copied().or_else(|| {
+			if let Some(parent_list) = self.import_map.get(module_id) {
+				if parent_list.len() == 1 {
+					return Some(parent_list[0].id);
+				} else {
+					return self.shortest_import(parent_list).0;
+				}
+			}
+			return None;
+		})
+	}
+
+	fn shortest_parent(&self, item_id: &Id) -> (Option<&Id>, usize) {
+		if let Some(parent) = self.child_parent_map.get(item_id) {
+			return (Some(parent), self.shortest_parent(parent).1);
+		}
+		if let Some(parent_list) = self.import_map.get(item_id) {
+			if parent_list.len() == 1 {
+				let parent = parent_list[0].id;
+				return (Some(parent), self.shortest_parent(parent).1);
+			}
+			return self.shortest_import(parent_list);
+		}
+		(None, 0)
+	}
+
+	fn shortest_import(&self, parent_list: &Vec<Parent<'a>>) -> (Option<&Id>, usize) {
+		if parent_list.len() == 1 {
+			let parent = parent_list[0].id;
+			return (Some(parent), self.shortest_parent(parent).1);
+		}
+		let mut shortest_parent = None;
+		let mut shortest_len = usize::MAX;
+		for parent in parent_list {
+			let path = self.shortest_parent(parent.id);
+			if path.1 < shortest_len {
+				shortest_parent = path.0;
+				shortest_len = path.1;
+			}
+		}
+		return (shortest_parent, shortest_len);
 	}
 
 	pub fn root(&self) -> &NamedItem<'a, Module> {

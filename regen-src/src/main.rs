@@ -336,7 +336,7 @@ use std::path;
 // Hacky but works for now. Would like to check full path instead.
 fn has_module_with_name(path_resolver: &rustdoc_util::PathResolver, id: &Id, name: &str) -> bool {
 	let mut id = id;
-	while let Some(parent) = path_resolver.parent(id) {
+	while let Some(parent) = path_resolver.canonical_parent(id) {
 		id = parent;
 		if let Some(item) = path_resolver.doc().index.get(id) {
 			if let Some(item_name) = &item.name {
