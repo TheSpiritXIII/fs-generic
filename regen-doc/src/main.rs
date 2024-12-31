@@ -100,9 +100,10 @@ fn main() -> anyhow::Result<()> {
 		std::process::exit(1)
 	};
 
-	info!("Parsing data...");
+	info!("Parsing and normalizing data...");
 	let data_raw = fs::read_to_string(target_path)?;
-	let data: rustdoc_types::Crate = serde_json::from_str(&data_raw)?;
+	let mut data: rustdoc_types::Crate = serde_json::from_str(&data_raw)?;
+	normalize_paths(&mut data)?;
 
 	info!("Outputting and formatting data to this project...");
 	let out = prettify_json(&data)?;
@@ -118,6 +119,18 @@ fn prettify_json(data: impl Serialize) -> anyhow::Result<Vec<u8>> {
 	let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
 	data.serialize(&mut ser)?;
 	Ok(buf)
+}
+
+fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<()> {
+	let root_path = env::current_dir()?;
+	for (_, item) in &mut doc_crate.index {
+		if let Some(span) = &mut item.span {
+			if let Ok(strip) = span.filename.strip_prefix(&root_path) {
+				span.filename = strip.to_owned();
+			}
+		}
+	}
+	Ok(())
 }
 
 fn discover_target(rust_src_path: impl AsRef<Path>) -> Option<PathBuf> {
