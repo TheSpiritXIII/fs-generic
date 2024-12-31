@@ -330,7 +330,7 @@ pub trait Fs {
 	/// # Platform-specific behavior
 	///
 	/// This function currently corresponds to the `opendir` function on Unix
-	/// and the `FindFirstFile` function on Windows. Advancing the iterator
+	/// and the `FindFirstFileEx` function on Windows. Advancing the iterator
 	/// currently corresponds to `readdir` on Unix and `FindNextFile` on Windows.
 	/// Note that, this [may change in the future][changes].
 	///
@@ -459,6 +459,10 @@ pub trait Fs {
 
 	/// Removes an empty directory.
 	///
+	/// If you want to remove a directory that is not empty, as well as all
+	/// of its contents recursively, consider using [`remove_dir_all`]
+	/// instead.
+	///
 	/// # Platform-specific behavior
 	///
 	/// This function currently corresponds to the `rmdir` function on Unix
@@ -518,8 +522,9 @@ pub trait Fs {
 	/// See [`fs::remove_file`] and [`fs::remove_dir`].
 	///
 	/// `remove_dir_all` will fail if `remove_dir` or `remove_file` fail on any constituent paths,
-	/// including the root path. As a result, the directory you are deleting must exist, meaning
-	/// that this function is not idempotent.
+	/// including the root `path`. As a result, the directory you are deleting must exist, meaning
+	/// that this function is not idempotent. Additionally, `remove_dir_all` will also fail if the
+	/// `path` is not a directory.
 	///
 	/// Consider ignoring the error if validating the removal is not required for your use case.
 	///
@@ -588,12 +593,14 @@ pub trait Fs {
 	/// # Platform-specific behavior
 	///
 	/// This function currently corresponds to the `rename` function on Unix
-	/// and the `MoveFileEx` function with the `MOVEFILE_REPLACE_EXISTING` flag on Windows.
+	/// and the `SetFileInformationByHandle` function on Windows.
 	///
 	/// Because of this, the behavior when both `from` and `to` exist differs. On
 	/// Unix, if `from` is a directory, `to` must also be an (empty) directory. If
-	/// `from` is not a directory, `to` must also be not a directory. In contrast,
-	/// on Windows, `from` can be anything, but `to` must *not* be a directory.
+	/// `from` is not a directory, `to` must also be not a directory. The behavior
+	/// on Windows is the same on Windows 10 1607 and higher if `FileRenameInfoEx`
+	/// is supported by the filesystem; otherwise, `from` can be anything, but
+	/// `to` must *not* be a directory.
 	///
 	/// Note that, this [may change in the future][changes].
 	///

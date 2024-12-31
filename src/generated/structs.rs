@@ -127,6 +127,11 @@ pub trait File {
 	// fn options() -> OpenOptions;
 	// fn sync_all(self: &Self, ) -> io::Result<(),>;
 	// fn sync_data(self: &Self, ) -> io::Result<(),>;
+	// fn lock(self: &Self, ) -> io::Result<(),>;
+	// fn lock_shared(self: &Self, ) -> io::Result<(),>;
+	// fn try_lock(self: &Self, ) -> io::Result<bool,>;
+	// fn try_lock_shared(self: &Self, ) -> io::Result<bool,>;
+	// fn unlock(self: &Self, ) -> io::Result<(),>;
 	// fn set_len(self: &Self, size: u64, ) -> io::Result<(),>;
 	// fn metadata(self: &Self, ) -> io::Result<Metadata,>;
 	// fn try_clone(self: &Self, ) -> io::Result<File,>;
@@ -155,6 +160,7 @@ pub trait FileTimes {
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
 	// impl core::default::Default
+	// impl std::os::darwin::fs::FileTimesExt
 }
 
 // impl FileTimes for std::fs::FileTimes {}
@@ -193,6 +199,7 @@ pub trait Metadata {
 	// fn created(self: &Self, ) -> io::Result<SystemTime,>;
 	// impl core::clone::Clone
 	// impl core::fmt::Debug
+	// impl std::os::darwin::fs::MetadataExt
 }
 
 // impl Metadata for std::fs::Metadata {}
