@@ -4,7 +4,6 @@ use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use log::error;
 use rustdoc_types::Crate;
 use rustdoc_types::Id;
 use rustdoc_types::Item;
@@ -182,15 +181,13 @@ impl<'a> PathResolver<'a> {
 					ItemEnum::Module(child_module) => {
 						queue.push((child_id, child_module));
 					}
-					ItemEnum::Import {
-						id: Some(import_id),
-						name,
-						..
-					} => {
-						import_map.entry(import_id).or_default().push(Parent {
-							id: module_id,
-							alias: Some(name),
-						});
+					ItemEnum::Use(use_item) => {
+						if let Some(import_id) = &use_item.id {
+							import_map.entry(import_id).or_default().push(Parent {
+								id: module_id,
+								alias: Some(&use_item.name),
+							});
+						}
 					}
 					_ => {}
 				}

@@ -221,7 +221,7 @@ fn generate_structs(
 						if &impl_trait.id == deny {
 							continue;
 						}
-						if doc_impl.blanket_impl.is_some() || doc_impl.synthetic {
+						if doc_impl.blanket_impl.is_some() || doc_impl.is_synthetic {
 							continue;
 						}
 
@@ -309,7 +309,7 @@ fn generate_functions(
 		print::write_function(buf, doc_crate, item.name, item.inner)?;
 		writeln!(buf, " {{")?;
 		write!(buf, "	std::fs::{}(", item.name)?;
-		for (input_name, _) in &item.inner.decl.inputs {
+		for (input_name, _) in &item.inner.sig.inputs {
 			write!(buf, "{input_name}, ")?;
 		}
 		writeln!(buf, ")")?;

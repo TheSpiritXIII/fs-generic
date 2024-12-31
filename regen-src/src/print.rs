@@ -74,14 +74,14 @@ pub fn write_type<W: Write>(out: &mut W, root: &Crate, item_type: &Type) -> io::
 		}
 		Type::BorrowedRef {
 			lifetime,
-			mutable,
+			is_mutable,
 			type_,
 		} => {
 			write!(out, "&")?;
 			if let Some(lifetime_name) = lifetime {
 				write!(out, "`{lifetime_name} ")?;
 			}
-			if *mutable {
+			if *is_mutable {
 				write!(out, "mut ")?;
 			}
 			write_type(out, root, type_)?;
@@ -98,7 +98,7 @@ pub fn write_generic_args<W: Write>(
 ) -> io::Result<()> {
 	if let GenericArgs::AngleBracketed {
 		args,
-		bindings,
+		constraints,
 	} = args
 	{
 		if !args.is_empty() {
@@ -122,7 +122,7 @@ pub fn write_generic_args<W: Write>(
 			}
 			write!(out, ">")?;
 		}
-		if !bindings.is_empty() {
+		if !constraints.is_empty() {
 			unimplemented!();
 		}
 	} else {
@@ -144,7 +144,7 @@ pub fn write_function_args<W: Write>(
 				GenericParamDefKind::Type {
 					bounds,
 					default,
-					synthetic,
+					is_synthetic,
 				} => {
 					for bound in bounds {
 						match bound {
@@ -167,7 +167,7 @@ pub fn write_function_args<W: Write>(
 							_ => unimplemented!(),
 						}
 					}
-					if *synthetic || default.is_some() {
+					if *is_synthetic || default.is_some() {
 						unimplemented!();
 					}
 				}
@@ -179,14 +179,14 @@ pub fn write_function_args<W: Write>(
 	}
 
 	write!(out, "(")?;
-	for (input_name, input_type) in &function.decl.inputs {
+	for (input_name, input_type) in &function.sig.inputs {
 		write!(out, "{input_name}: ")?;
 		write_type(out, root, input_type)?;
 		write!(out, ", ")?;
 	}
 	write!(out, ")")?;
 
-	if let Some(output_type) = &function.decl.output {
+	if let Some(output_type) = &function.sig.output {
 		write!(out, " -> ")?;
 		write_type(out, root, output_type)?;
 	}

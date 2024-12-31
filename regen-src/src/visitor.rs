@@ -26,7 +26,13 @@ where
 			..
 		}
 		| ItemEnum::Macro(_) => return true,
-		ItemEnum::Use(_) => unimplemented!(),
+		ItemEnum::Use(use_item) => {
+			if let Some(id) = &use_item.id {
+				if !visitor(id) {
+					return false;
+				}
+			}
+		}
 		ItemEnum::Union(union) => {
 			for id in &union.fields {
 				if !visitor(id) {
@@ -84,16 +90,6 @@ where
 		ItemEnum::AssocType {
 			..
 		} => unimplemented!(),
-		ItemEnum::Import {
-			id,
-			..
-		} => {
-			if let Some(id) = id {
-				if !visitor(id) {
-					return false;
-				}
-			}
-		}
 	}
 	true
 }
@@ -185,7 +181,7 @@ where
 	match args {
 		rustdoc_types::GenericArgs::AngleBracketed {
 			args,
-			bindings,
+			constraints,
 		} => {
 			for arg in args {
 				match arg {
@@ -199,11 +195,11 @@ where
 					| rustdoc_types::GenericArg::Infer => return true,
 				}
 			}
-			for binding in bindings {
-				if !visit_generic_args(&binding.args, visitor) {
+			for constraint in constraints {
+				if !visit_generic_args(&constraint.args, visitor) {
 					return false;
 				}
-				match &binding.binding {
+				match &constraint.binding {
 					rustdoc_types::AssocItemConstraintKind::Equality(term) => {
 						match term {
 							rustdoc_types::Term::Type(term_type) => {
