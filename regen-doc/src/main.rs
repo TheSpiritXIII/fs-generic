@@ -103,10 +103,10 @@ fn main() -> anyhow::Result<()> {
 	info!("Parsing and normalizing data...");
 	let data_raw = fs::read_to_string(target_path)?;
 	let mut data: rustdoc_types::Crate = serde_json::from_str(&data_raw)?;
-	normalize_paths(&mut data)?;
+	let value = normalize_paths(&mut data)?;
 
 	info!("Outputting and formatting data to this project...");
-	let out = prettify_json(&data)?;
+	let out = prettify_json(&value)?;
 	fs::write("./data/std.json", out)?;
 
 	info!("Done!");
@@ -121,7 +121,7 @@ fn prettify_json(data: impl Serialize) -> anyhow::Result<Vec<u8>> {
 	Ok(buf)
 }
 
-fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<()> {
+fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<serde_json::Value> {
 	let root_path = env::current_dir()?;
 	for (_, item) in &mut doc_crate.index {
 		if let Some(span) = &mut item.span {
@@ -130,7 +130,26 @@ fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<()> {
 			}
 		}
 	}
-	Ok(())
+	let mut value = serde_json::to_value(doc_crate)?;
+	let Some(index_item) = value.get_mut("index") else {
+		return Ok(value);
+	};
+	let Some(index) = index_item.as_object_mut() else {
+		return Ok(value);
+	};
+	for (_, item) in index {
+		if let Some(span) = item.get_mut("span") {
+			if let Some(span_obj) = span.as_object_mut() {
+				if let Some(filename) = span_obj.get_mut("filename") {
+					if let Some(filename_str) = filename.as_str() {
+						let normalized_filename = filename_str.replace("\\", "/");
+						*filename = serde_json::Value::String(normalized_filename);
+					}
+				}
+			}
+		}
+	}
+	Ok(value)
 }
 
 fn discover_target(rust_src_path: impl AsRef<Path>) -> Option<PathBuf> {
