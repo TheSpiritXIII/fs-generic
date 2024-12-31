@@ -184,7 +184,7 @@ fn rustdoc_build_path(target: &str) -> String {
 }
 
 fn regen_rustdoc(rust_src_dir: impl AsRef<Path>) -> io::Result<()> {
-	let mut command = Command::new("python3");
+	let mut command = Command::new("python");
 	command.current_dir(rust_src_dir);
 	command.args([
 		"x.py",

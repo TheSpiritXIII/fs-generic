@@ -1,4 +1,4 @@
-> [!NOTE]  
+> [!WARNING]
 > This library is a WIP and not functional yet!
 
 ## Regenerating
@@ -10,6 +10,9 @@ There are two helper scripts:
 2. `regen-src`: Processes `data/std.json` and output valid Rust source code into `src/generated.rs`.
 
 ### regen-doc
+
+> [!NOTE]
+> This builds Rust source code, which means you must have required dependencies, such as Python, installed.
 
 First, clone this repository. Then, navigate to it. Next, run the script. Run in your shell of choice:
 
