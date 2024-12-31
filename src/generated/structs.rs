@@ -141,6 +141,12 @@ pub trait File {
 	// impl std::io::Write
 	// impl std::io::Seek
 	// impl IsTerminal
+	// impl AsRawFd
+	// impl FromRawFd
+	// impl IntoRawFd
+	// impl AsFd
+	// impl core::convert::From<File,>
+	// impl core::convert::From<OwnedFd,>
 	// impl core::convert::From<File,>
 }
 

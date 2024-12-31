@@ -157,6 +157,51 @@ pub struct PathResolver<'a> {
 	import_map: HashMap<&'a Id, Vec<Parent<'a>>>,
 }
 
+fn imports_from<'a, F: FnMut(&'a Id)>(
+	doc: &'a Crate,
+	module_id: &'a Id,
+	f: &mut F,
+) -> Result<(), ItemError> {
+	let Some(child_item) = doc.index.get(module_id) else {
+		// return Err(ItemError {
+		// 	id: module_id.clone(),
+		// 	kind: ItemErrorKind::MissingItem,
+		// });
+		return Ok(());
+	};
+	let ItemEnum::Module(child_module) = &child_item.inner else {
+		return Err(ItemError {
+			id: module_id.clone(),
+			kind: ItemErrorKind::ExpectedType(ItemKind::Module),
+		});
+	};
+	for child_id in &child_module.items {
+		let Some(child_item) = doc.index.get(child_id) else {
+			// return Err(ItemError {
+			// 	id: child_id.clone(),
+			// 	kind: ItemErrorKind::MissingItem,
+			// });
+			continue;
+		};
+		if let ItemEnum::Import {
+			id: Some(import_id),
+			name,
+			glob,
+			..
+		} = &child_item.inner
+		{
+			if *glob {
+				imports_from(doc, import_id, f);
+			} else {
+				f(import_id);
+			}
+		} else {
+			f(child_id)
+		};
+	}
+	Ok(())
+}
+
 impl<'a> PathResolver<'a> {
 	pub fn from(doc: &'a Crate) -> Result<Self, ItemError> {
 		let root_module = root_module(doc)?;
@@ -185,12 +230,22 @@ impl<'a> PathResolver<'a> {
 					ItemEnum::Import {
 						id: Some(import_id),
 						name,
+						glob,
 						..
 					} => {
-						import_map.entry(import_id).or_default().push(Parent {
-							id: module_id,
-							alias: Some(name),
-						});
+						if *glob {
+							imports_from(doc, import_id, &mut |id: &Id| {
+								import_map.entry(id).or_default().push(Parent {
+									id: module_id,
+									alias: None,
+								});
+							})?;
+						} else {
+							import_map.entry(import_id).or_default().push(Parent {
+								id: module_id,
+								alias: Some(name),
+							});
+						}
 					}
 					_ => {}
 				}
