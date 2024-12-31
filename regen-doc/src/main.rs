@@ -100,17 +100,19 @@ fn main() -> anyhow::Result<()> {
 		std::process::exit(1)
 	};
 
-	info!("Copying and formatting data to this project...");
+	info!("Parsing data...");
 	let data_raw = fs::read_to_string(target_path)?;
-	let data = prettify_json(&data_raw)?;
-	fs::write("./data/std.json", data)?;
+	let data: rustdoc_types::Crate = serde_json::from_str(&data_raw)?;
+
+	info!("Outputting and formatting data to this project...");
+	let out = prettify_json(&data)?;
+	fs::write("./data/std.json", out)?;
 
 	info!("Done!");
 	Ok(())
 }
 
-fn prettify_json(raw: &str) -> anyhow::Result<Vec<u8>> {
-	let data: serde_json::Value = serde_json::from_str(raw)?;
+fn prettify_json(data: impl Serialize) -> anyhow::Result<Vec<u8>> {
 	let mut buf = Vec::new();
 	let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
 	let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);

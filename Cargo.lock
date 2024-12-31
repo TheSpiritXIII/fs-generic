@@ -154,6 +154,7 @@ dependencies = [
  "anyhow",
  "env_logger",
  "log",
+ "rustdoc-types",
  "serde",
  "serde_json",
  "thiserror",
