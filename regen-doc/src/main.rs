@@ -17,6 +17,7 @@ use std::thread;
 use log::error;
 use log::info;
 use log::warn;
+use serde::ser::Serialize;
 use thiserror::Error;
 
 const CONFIG_FILE: &str = include_str!("../data/config.toml");
@@ -99,10 +100,22 @@ fn main() -> anyhow::Result<()> {
 		std::process::exit(1)
 	};
 
-	info!("Copying data to this project...");
-	fs::copy(target_path, "./data/std.json")?;
+	info!("Copying and formatting data to this project...");
+	let data_raw = fs::read_to_string(target_path)?;
+	let data = prettify_json(&data_raw)?;
+	fs::write("./data/std.json", data)?;
+
 	info!("Done!");
 	Ok(())
+}
+
+fn prettify_json(raw: &str) -> anyhow::Result<Vec<u8>> {
+	let data: serde_json::Value = serde_json::from_str(raw)?;
+	let mut buf = Vec::new();
+	let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
+	let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+	data.serialize(&mut ser)?;
+	Ok(buf)
 }
 
 fn discover_target(rust_src_path: impl AsRef<Path>) -> Option<PathBuf> {
