@@ -140,11 +140,25 @@ pub trait File {
 	// impl std::io::Read
 	// impl std::io::Write
 	// impl std::io::Seek
+<<<<<<< Updated upstream
 	// impl IsTerminal
 	// impl AsRawFd
 	// impl FromRawFd
 	// impl IntoRawFd
 	// impl AsFd
+=======
+	// impl std::io::IsTerminal
+	// impl std::os::windows::prelude::AsHandle
+	// impl core::convert::From<File,>
+	// impl core::convert::From<OwnedHandle,>
+	// impl std::os::windows::prelude::AsRawHandle
+	// impl std::os::windows::prelude::FromRawHandle
+	// impl std::os::windows::prelude::IntoRawHandle
+	// impl std::os::wasi::prelude::AsRawFd
+	// impl std::os::wasi::prelude::FromRawFd
+	// impl std::os::wasi::prelude::IntoRawFd
+	// impl std::os::wasi::prelude::AsFd
+>>>>>>> Stashed changes
 	// impl core::convert::From<File,>
 	// impl core::convert::From<OwnedFd,>
 	// impl core::convert::From<File,>

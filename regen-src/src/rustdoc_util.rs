@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -154,6 +155,7 @@ pub struct PathResolver<'a> {
 	doc: &'a Crate,
 	root_module: NamedItem<'a, Module>,
 	child_parent_map: HashMap<&'a Id, &'a Id>,
+<<<<<<< Updated upstream
 	import_map: HashMap<&'a Id, Vec<Parent<'a>>>,
 }
 
@@ -200,6 +202,9 @@ fn imports_from<'a, F: FnMut(&'a Id)>(
 		};
 	}
 	Ok(())
+=======
+	child_parent_reexport_map: HashMap<&'a Id, Vec<Parent<'a>>>,
+>>>>>>> Stashed changes
 }
 
 impl<'a> PathResolver<'a> {
@@ -207,22 +212,39 @@ impl<'a> PathResolver<'a> {
 		let root_module = root_module(doc)?;
 
 		let mut child_parent_map = HashMap::new();
+<<<<<<< Updated upstream
 		let mut import_map = HashMap::<&'a Id, Vec<Parent<'a>>>::new();
+=======
+		let mut child_parent_reexport_map = HashMap::<&'a Id, Vec<Parent<'a>>>::new();
+>>>>>>> Stashed changes
 		let mut queue = vec![(&root_module.base.id, root_module.inner)];
+		let mut saw_modules = HashSet::new();
 		while let Some((module_id, module)) = queue.pop() {
+			if !saw_modules.insert(&module_id.0) {
+				error!("Re-processing module {}", module_id.0);
+				continue;
+			}
 			for child_id in &module.items {
+<<<<<<< Updated upstream
 				if let Some(reexport) = child_parent_map.insert(child_id, module_id) {
 					return Err(ItemError {
 						id: child_id.clone(),
 						kind: ItemErrorKind::MultipleExports(module_id.clone(), reexport.clone()),
 					});
 				}
+=======
+				child_parent_reexport_map.entry(child_id).or_default().push(Parent {
+					id: module_id,
+					alias: None,
+				});
+>>>>>>> Stashed changes
 				let Some(child_item) = doc.index.get(child_id) else {
 					return Err(ItemError {
 						id: child_id.clone(),
 						kind: ItemErrorKind::MissingItem,
 					});
 				};
+<<<<<<< Updated upstream
 				match &child_item.inner {
 					ItemEnum::Module(child_module) => {
 						queue.push((child_id, child_module));
@@ -248,6 +270,50 @@ impl<'a> PathResolver<'a> {
 						}
 					}
 					_ => {}
+=======
+				let mut child_item = child_item;
+				match &child_item.inner {
+					ItemEnum::Module(child_module) => {
+						if child_parent_map.insert(child_id, module_id).is_some() {
+							error!("Re-export inner! {} to {}", child_id.0, module_id.0);
+						}
+						// child_parent_reexport_map.entry(child_id).or_default().push(Parent {
+						// 	id: module_id,
+						// 	alias: None,
+						// });
+						queue.push((child_id, child_module));
+					}
+					ItemEnum::Import {
+						id: Some(import_id),
+						name,
+						glob,
+						..
+					} => {
+						let alias = if *glob {
+							None
+						} else {
+							Some(name)
+						};
+						child_parent_reexport_map.entry(import_id).or_default().push(Parent {
+							id: module_id,
+							alias,
+						});
+
+						// Built-in types will not be found.
+						if let Some(import_item) = doc.index.get(import_id) {
+							child_item = import_item;
+							continue;
+						}
+					}
+					_ => {
+						if let Some(reexport) = child_parent_map.insert(child_id, module_id) {
+							error!(
+								"Re-export! {} to {} (previously {})",
+								child_id.0, module_id.0, reexport.0
+							);
+						}
+					}
+>>>>>>> Stashed changes
 				}
 			}
 		}
@@ -255,6 +321,7 @@ impl<'a> PathResolver<'a> {
 			doc,
 			root_module,
 			child_parent_map,
+<<<<<<< Updated upstream
 			import_map,
 		})
 	}
@@ -301,7 +368,90 @@ impl<'a> PathResolver<'a> {
 			}
 		}
 		return (shortest_parent, shortest_len);
+=======
+			child_parent_reexport_map,
+		})
 	}
+
+	pub fn path(&self, item_id: &Id) -> Option<Vec<String>> {
+		let mut out = Vec::new();
+		if self.path_with(item_id, &mut out) {
+			Some(out)
+		} else {
+			None
+		}
+	}
+
+	fn path_with(&self, item_id: &Id, out: &mut Vec<String>) -> bool {
+		// If we re-export, we want the smallest possible path.
+		// If we do not re-export, return that.
+		if let Some(parent_list) = self.child_parent_reexport_map.get(item_id) {
+			// let possibilities = Vec::new();
+			// for (index, parent) in parent_list.iter().enumerate() {
+			// 	let mut clone = out.clone();
+			let parent = &parent_list[0];
+			self.path_with(parent.id, out);
+
+			if let Some(alias) = parent.alias {
+				out.push(alias.to_owned());
+				return true;
+			}
+			// }
+		} else if let Some(parent) = self.child_parent_map.get(item_id) {
+			if !self.path_with(parent, out) {
+				return false;
+			}
+		} else if let Some(item_summary) = self.doc.paths.get(item_id) {
+			for path in &item_summary.path {
+				out.push(path.to_owned());
+			}
+			return true;
+		}
+		if let Some(item) = self.doc.index.get(item_id) {
+			if let Some(name) = &item.name {
+				out.push(name.to_owned());
+			} else {
+				return false;
+			}
+		}
+		true
+	}
+
+	// fn fully_qualified_path_with(&self, item_id: &Id, out: &mut Vec<String>) -> bool {
+	// 	if let Some(parent) = self.child_parent_map.get(item_id) {
+	// 		if !self.fully_qualified_path_with(parent, out) {
+	// 			return false;
+	// 		}
+	// 	} else if let Some(item_summary) = self.doc.paths.get(item_id) {
+	// 		for path in &item_summary.path {
+	// 			out.push(path.to_owned());
+	// 		}
+	// 		return true;
+	// 	}
+	// 	if let Some(item) = self.doc.index.get(item_id) {
+	// 		if let Some(name) = &item.name {
+	// 			out.push(name.to_owned());
+	// 		} else {
+	// 			return false;
+	// 		}
+	// 	}
+	// 	true
+	// }
+
+	pub fn parent(&self, module_id: &Id) -> Option<&'a Id> {
+		self.child_parent_map.get(module_id).copied()
+>>>>>>> Stashed changes
+	}
+
+	// pub fn root_parent<'b>(&self, module_id: &'b Id) -> &'b Id
+	// where
+	// 	'a: 'b,
+	// {
+	// 	if let Some(parent) = self.parent(module_id) {
+	// 		return self.root_parent(parent);
+	// 	}
+	// 	return module_id;
+	// }
 
 	pub fn root(&self) -> &NamedItem<'a, Module> {
 		&self.root_module

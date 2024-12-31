@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
 	info!("Parsing doc from {}...", input_path.display());
 	let input_data = fs::read_to_string(input_path)?;
 	let mut doc_crate = serde_json::from_str(&input_data)?;
-	remove_preludes(&mut doc_crate).map_err(SourceError::ParseError)?;
+	// remove_preludes(&mut doc_crate).map_err(SourceError::ParseError)?;
 
 	let output_dir = path::absolute("src/generated/")?;
 	info!("Regenerating source into {}...", output_dir.display());
@@ -133,6 +133,10 @@ fn json_to_rs(doc: &rustdoc_types::Crate, output_dir: impl AsRef<Path>) -> Resul
 	let mut buf = Vec::new();
 
 	let path_resolver = rustdoc_util::PathResolver::from(doc).map_err(SourceError::ParseError)?;
+	// if let Some(x) = path_resolver.path(&rustdoc_types::Id("0:3782:7948".to_owned())) {
+	// 	info!("Out: {}", x.iter().copied().cloned().collect::<Vec<String>>().join("::"));
+	// }
+	// exit(1);
 	let root_module = path_resolver.root();
 	for id in &root_module.inner.items {
 		if let Some(item) = doc.index.get(id) {
@@ -244,7 +248,7 @@ fn generate_structs(
 						}
 
 						write!(buf, "// impl ")?;
-						print::write_path(buf, doc_crate, impl_trait)?;
+						print::write_path(buf, &path_resolver, doc_crate, impl_trait)?;
 						writeln!(buf)?;
 						continue;
 					}

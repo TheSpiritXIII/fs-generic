@@ -12,6 +12,8 @@ use rustdoc_types::Path;
 use rustdoc_types::TraitBoundModifier;
 use rustdoc_types::Type;
 
+use crate::rustdoc_util::PathResolver;
+
 pub fn write_doc<W: Write>(out: &mut W, item: &Item) -> io::Result<()> {
 	if let Some(docs) = &item.docs {
 		for line in docs.lines() {
@@ -21,12 +23,18 @@ pub fn write_doc<W: Write>(out: &mut W, item: &Item) -> io::Result<()> {
 	Ok(())
 }
 
-pub fn write_path<W: Write>(out: &mut W, root: &Crate, path: &Path) -> io::Result<()> {
-	if let Some(item_summary) = root.paths.get(&path.id) {
-		for i in 0..item_summary.path.len() {
-			let path = &item_summary.path[i];
-			write!(out, "{path}")?;
-			if i != item_summary.path.len() - 1 {
+pub fn write_path<W: Write>(
+	out: &mut W,
+	resolver: &PathResolver,
+	root: &Crate,
+	path: &Path,
+) -> io::Result<()> {
+	// write!(out, "{}", path.id.0)?;
+	if let Some(path) = resolver.path(&path.id) {
+		for i in 0..path.len() {
+			let name = &path[i];
+			write!(out, "{name}")?;
+			if i < path.len() - 1 {
 				write!(out, "::")?;
 			}
 		}
