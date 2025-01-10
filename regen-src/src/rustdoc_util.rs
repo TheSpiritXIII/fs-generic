@@ -102,17 +102,17 @@ impl fmt::Display for ItemError {
 pub fn get<'a>(doc: &'a Crate, id: &'a Id) -> Result<&'a Item, ItemError> {
 	let Some(item) = doc.index.get(id) else {
 		return Err(ItemError {
-			id: doc.root.clone(),
+			id: doc.root,
 			kind: ItemErrorKind::MissingItem,
 		});
 	};
 	Ok(item)
 }
 
-pub fn get_mut<'a>(doc: &'a mut Crate, id: &Id) -> Result<&'a mut Item, ItemError> {
-	let Some(item) = doc.index.get_mut(id) else {
+pub fn get_mut(doc: &mut Crate, id: Id) -> Result<&mut Item, ItemError> {
+	let Some(item) = doc.index.get_mut(&id) else {
 		return Err(ItemError {
-			id: doc.root.clone(),
+			id: doc.root,
 			kind: ItemErrorKind::MissingItem,
 		});
 	};
@@ -131,13 +131,13 @@ pub fn root_module(doc: &Crate) -> Result<NamedItem<Module>, ItemError> {
 				});
 			}
 			Err(ItemError {
-				id: doc.root.clone(),
+				id: doc.root,
 				kind: ItemErrorKind::MissingName,
 			})
 		}
 		_ => {
 			Err(ItemError {
-				id: doc.root.clone(),
+				id: doc.root,
 				kind: ItemErrorKind::ExpectedType(ItemKind::Module),
 			})
 		}
@@ -152,8 +152,8 @@ struct Parent<'a> {
 pub struct PathResolver<'a> {
 	doc: &'a Crate,
 	root_module: NamedItem<'a, Module>,
-	child_parent_map: HashMap<&'a Id, &'a Id>,
-	import_map: HashMap<&'a Id, Vec<Parent<'a>>>,
+	child_parent_map: HashMap<Id, Id>,
+	import_map: HashMap<Id, Vec<Parent<'a>>>,
 }
 
 impl<'a> PathResolver<'a> {
@@ -161,19 +161,19 @@ impl<'a> PathResolver<'a> {
 		let root_module = root_module(doc)?;
 
 		let mut child_parent_map = HashMap::new();
-		let mut import_map = HashMap::<&'a Id, Vec<Parent<'a>>>::new();
+		let mut import_map = HashMap::<Id, Vec<Parent<'a>>>::new();
 		let mut queue = vec![(&root_module.base.id, root_module.inner)];
 		while let Some((module_id, module)) = queue.pop() {
 			for child_id in &module.items {
-				if let Some(reexport) = child_parent_map.insert(child_id, module_id) {
+				if let Some(reexport) = child_parent_map.insert(*child_id, *module_id) {
 					return Err(ItemError {
-						id: child_id.clone(),
-						kind: ItemErrorKind::MultipleExports(module_id.clone(), reexport.clone()),
+						id: *child_id,
+						kind: ItemErrorKind::MultipleExports(*module_id, reexport),
 					});
 				}
 				let Some(child_item) = doc.index.get(child_id) else {
 					return Err(ItemError {
-						id: child_id.clone(),
+						id: *child_id,
 						kind: ItemErrorKind::MissingItem,
 					});
 				};
@@ -183,7 +183,7 @@ impl<'a> PathResolver<'a> {
 					}
 					ItemEnum::Use(use_item) => {
 						if let Some(import_id) = &use_item.id {
-							import_map.entry(import_id).or_default().push(Parent {
+							import_map.entry(*import_id).or_default().push(Parent {
 								id: module_id,
 								alias: Some(&use_item.name),
 							});
@@ -201,26 +201,25 @@ impl<'a> PathResolver<'a> {
 		})
 	}
 
-	pub fn canonical_parent(&self, module_id: &Id) -> Option<&Id> {
-		self.child_parent_map.get(module_id).copied().or_else(|| {
-			if let Some(parent_list) = self.import_map.get(module_id) {
+	pub fn canonical_parent(&self, module_id: Id) -> Option<Id> {
+		self.child_parent_map.get(&module_id).copied().or_else(|| {
+			if let Some(parent_list) = self.import_map.get(&module_id) {
 				if parent_list.len() == 1 {
-					return Some(parent_list[0].id);
-				} else {
-					return self.shortest_import(parent_list).0;
+					return Some(*parent_list[0].id);
 				}
+				return self.shortest_import(parent_list).0;
 			}
-			return None;
+			None
 		})
 	}
 
-	fn shortest_parent(&self, item_id: &Id) -> (Option<&Id>, usize) {
-		if let Some(parent) = self.child_parent_map.get(item_id) {
-			return (Some(parent), self.shortest_parent(parent).1);
+	fn shortest_parent(&self, item_id: Id) -> (Option<Id>, usize) {
+		if let Some(parent) = self.child_parent_map.get(&item_id) {
+			return (Some(*parent), self.shortest_parent(*parent).1);
 		}
-		if let Some(parent_list) = self.import_map.get(item_id) {
+		if let Some(parent_list) = self.import_map.get(&item_id) {
 			if parent_list.len() == 1 {
-				let parent = parent_list[0].id;
+				let parent = *parent_list[0].id;
 				return (Some(parent), self.shortest_parent(parent).1);
 			}
 			return self.shortest_import(parent_list);
@@ -228,21 +227,21 @@ impl<'a> PathResolver<'a> {
 		(None, 0)
 	}
 
-	fn shortest_import(&self, parent_list: &Vec<Parent<'a>>) -> (Option<&Id>, usize) {
+	fn shortest_import(&self, parent_list: &Vec<Parent<'a>>) -> (Option<Id>, usize) {
 		if parent_list.len() == 1 {
-			let parent = parent_list[0].id;
+			let parent = *parent_list[0].id;
 			return (Some(parent), self.shortest_parent(parent).1);
 		}
 		let mut shortest_parent = None;
 		let mut shortest_len = usize::MAX;
 		for parent in parent_list {
-			let path = self.shortest_parent(parent.id);
+			let path = self.shortest_parent(*parent.id);
 			if path.1 < shortest_len {
 				shortest_parent = path.0;
 				shortest_len = path.1;
 			}
 		}
-		return (shortest_parent, shortest_len);
+		(shortest_parent, shortest_len)
 	}
 
 	pub fn root(&self) -> &NamedItem<'a, Module> {

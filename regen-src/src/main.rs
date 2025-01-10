@@ -102,7 +102,7 @@ fn remove_preludes(doc: &mut rustdoc_types::Crate) -> Result<(), rustdoc_util::I
 			if let Some(item) = doc.index.get(id) {
 				if let Some(name) = &item.name {
 					if name == "prelude" {
-						prelude_index = Some((index, id.clone()));
+						prelude_index = Some((index, *id));
 						break;
 					}
 				}
@@ -110,7 +110,7 @@ fn remove_preludes(doc: &mut rustdoc_types::Crate) -> Result<(), rustdoc_util::I
 		}
 	}
 
-	let root_item = rustdoc_util::get_mut(doc, &doc.root.clone()).unwrap();
+	let root_item = rustdoc_util::get_mut(doc, doc.root).unwrap();
 	let rustdoc_types::ItemEnum::Module(root_module) = &mut root_item.inner else {
 		unreachable!("already checked type earlier");
 	};
@@ -334,11 +334,11 @@ use std::path;
 }
 
 // Hacky but works for now. Would like to check full path instead.
-fn has_module_with_name(path_resolver: &rustdoc_util::PathResolver, id: &Id, name: &str) -> bool {
+fn has_module_with_name(path_resolver: &rustdoc_util::PathResolver, id: Id, name: &str) -> bool {
 	let mut id = id;
 	while let Some(parent) = path_resolver.canonical_parent(id) {
 		id = parent;
-		if let Some(item) = path_resolver.doc().index.get(id) {
+		if let Some(item) = path_resolver.doc().index.get(&id) {
 			if let Some(item_name) = &item.name {
 				if item_name == name {
 					return true;

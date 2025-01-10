@@ -123,7 +123,7 @@ fn prettify_json(data: impl Serialize) -> anyhow::Result<Vec<u8>> {
 
 fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<serde_json::Value> {
 	let root_path = env::current_dir()?;
-	for (_, item) in &mut doc_crate.index {
+	for item in &mut doc_crate.index.values_mut() {
 		if let Some(span) = &mut item.span {
 			if let Ok(strip) = span.filename.strip_prefix(&root_path) {
 				span.filename = strip.to_owned();
@@ -142,7 +142,7 @@ fn normalize_paths(doc_crate: &mut rustdoc_types::Crate) -> anyhow::Result<serde
 			if let Some(span_obj) = span.as_object_mut() {
 				if let Some(filename) = span_obj.get_mut("filename") {
 					if let Some(filename_str) = filename.as_str() {
-						let normalized_filename = filename_str.replace("\\", "/");
+						let normalized_filename = filename_str.replace('\\', "/");
 						*filename = serde_json::Value::String(normalized_filename);
 					}
 				}

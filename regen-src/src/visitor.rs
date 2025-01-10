@@ -9,15 +9,15 @@ use rustdoc_types::Type;
 
 pub fn visit_item<T>(item: &Item, visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
-	if !visitor(&item.id) {
+	if !visitor(item.id) {
 		return false;
 	}
 	match &item.inner {
 		ItemEnum::Module(module) => {
 			for id in &module.items {
-				if !visitor(id) {
+				if !visitor(*id) {
 					return false;
 				}
 			}
@@ -28,19 +28,19 @@ where
 		| ItemEnum::Macro(_) => return true,
 		ItemEnum::Use(use_item) => {
 			if let Some(id) = &use_item.id {
-				if !visitor(id) {
+				if !visitor(*id) {
 					return false;
 				}
 			}
 		}
 		ItemEnum::Union(union) => {
 			for id in &union.fields {
-				if !visitor(id) {
+				if !visitor(*id) {
 					return false;
 				}
 			}
 			for id in &union.impls {
-				if !visitor(id) {
+				if !visitor(*id) {
 					return false;
 				}
 			}
@@ -68,7 +68,7 @@ where
 				}
 			}
 			for id in &impl_item.items {
-				if !visitor(id) {
+				if !visitor(*id) {
 					return false;
 				}
 			}
@@ -96,9 +96,9 @@ where
 
 fn visit_path<T>(path: &Path, visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
-	if !visitor(&path.id) {
+	if !visitor(path.id) {
 		return false;
 	}
 	if let Some(args) = &path.args {
@@ -111,7 +111,7 @@ where
 
 fn visit_type<T>(item_type: &Type, visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
 	match item_type {
 		Type::ResolvedPath(path) => visit_path(path, visitor),
@@ -176,7 +176,7 @@ where
 
 fn visit_generic_args<T>(args: &GenericArgs, visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
 	match args {
 		rustdoc_types::GenericArgs::AngleBracketed {
@@ -239,7 +239,7 @@ where
 
 fn visit_generic_params<T>(generic_params: &[GenericParamDef], visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
 	for generic in generic_params {
 		match &generic.kind {
@@ -275,7 +275,7 @@ where
 
 fn visit_generic_bounds<T>(bounds: &[GenericBound], visitor: &T) -> bool
 where
-	T: Fn(&Id) -> bool,
+	T: Fn(Id) -> bool,
 {
 	for bound in bounds {
 		match bound {
@@ -284,7 +284,7 @@ where
 				generic_params,
 				..
 			} => {
-				if !visitor(&trait_.id) {
+				if !visitor(trait_.id) {
 					return false;
 				}
 				if !visit_generic_params(generic_params, visitor) {
